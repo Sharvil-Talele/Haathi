@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wish Tokens</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to right, #ffe0ec, #c2e9fb);
+      margin: 0;
+      padding: 0;
+      color: #333;
+    }
+    header {
+      text-align: center;
+      padding: 2rem;
+      background-color: #ff69b4;
+      color: white;
+      font-size: 2rem;
+    }
+    #wish-section {
+      padding: 2rem;
+      max-width: 1000px;
+      margin: auto;
+    }
+    .token-display {
+      text-align: center;
+      font-size: 1.2rem;
+      color: #e91e63;
+      margin-bottom: 2rem;
+    }
+    .wish {
+      background: white;
+      border-radius: 12px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .wish button {
+      padding: 0.5rem 1rem;
+      background-color: #ff69b4;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .category {
+      margin: 2rem 0;
+      padding: 1rem;
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 10px;
+    }
+    .category h3 {
+      color: #e91e63;
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+  </style>
+<!-- Firebase SDKs: App + Firestore (v9 compat) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+  apiKey: "AIzaSyCcdppTg2pJc9c0iOig_Hp6pDIDAL6_Kjs",
+  authDomain: "pari-ca0b5.firebaseapp.com",
+  projectId: "pari-ca0b5",
+  storageBucket: "pari-ca0b5.appspot.com",
+  messagingSenderId: "426313475739",
+  appId: "1:426313475739:web:adcb0eb1570a593b62483e",
+  measurementId: "G-Y5TJF6Z0MK"
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+  </script>
+</head>
+<body>
+  <header>Wish Tokens 🎁</header>
+  <div id="wish-section">
+    <div class="token-display">You have <span id="token-count">?</span> tokens 💰</div>
+    <div id="wish-list"></div>
+  </div>
+
+  <script>
+    const wishes = [
+      // Original wishes
+      { name: "Back Massage", cost: 1, category: "Sweet & Caring" },
+      { name: "Foot Rub", cost: 1, category: "Sweet & Caring" },
+      { name: "One Free Kiss Anywhere 😉", cost: 2, category: "Romantic" },
+      { name: "You Choose My Outfit For The Day", cost: 1, category: "Fun & Playful" },
+      { name: "Movie Night In Your Arms 🍿", cost: 2, category: "Sweet & Caring" },
+      { name: "A Long, Hot Makeout Session", cost: 2, category: "Spicy" },
+      { name: "You Get To Cuddle Me To Sleep 🛏", cost: 2, category: "Sweet & Caring" },
+      { name: "Send You A Hot Pic 📸", cost: 1, category: "Naughty" },
+      { name: "Voice Note Moaning Your Name 😈", cost: 4, category: "Naughty" },
+      { name: "Private Video Just For You", cost: 6, category: "Naughty" },
+      { name: "Wet Look Selfie 📷", cost: 3, category: "Naughty" },
+      { name: "Mirror Pic In Your Fav Outfit", cost: 3, category: "Naughty" },
+      { name: "I Recreate Your Fantasy In Pics", cost: 6, category: "Naughty" },
+      { name: "Voice Recording Saying 'Good Girl' Repeatedly", cost: 3, category: "Naughty" },
+      { name: "Send A Dirty Voice Message", cost: 4, category: "Naughty" },
+      { name: "Whisper Your Name In Bed Video", cost: 5, category: "Naughty" },
+      { name: "Lick Lips In Slowmo Video", cost: 3, category: "Naughty" },
+      { name: "Send Naughty Texts For 1 Hour", cost: 3, category: "Naughty" },
+      { name: "Suggest A Pose — I'll Send A Pic", cost: 4, category: "Naughty" },
+      { name: "Booty Pic In Shorts", cost: 3, category: "Naughty" },
+      { name: "You Pick The Theme, I Send The Vibe", cost: 4, category: "Naughty" },
+      { name: "I Rate Your Pics, Brutally 😈", cost: 2, category: "Fun & Playful" },
+      { name: "My Morning Voice Saying Your Name", cost: 3, category: "Romantic" },
+      { name: "Blow A Kiss On Cam", cost: 2, category: "Sweet & Caring" },
+      { name: "One Day Sexting Marathon", cost: 5, category: "Naughty" },
+      { name: "Pick A Dare, I Send Proof Pic", cost: 4, category: "Naughty" },
+      { name: "You Get A Dirty Drawing By Me ✍", cost: 4, category: "Naughty" },
+      { name: "Topless Tease  😳", cost: 6, category: "Naughty" },
+      { name: "Ask Me Anything (No Filter Edition)", cost: 3, category: "Fun & Playful" },
+      { name: "Describe A Hot Dream I Had About You", cost: 2, category: "Naughty" },
+      { name: "Selfie While Moaning Your Name", cost: 5, category: "Naughty" },
+      { name: "Make A Lip Bite Compilation", cost: 4, category: "Naughty" },
+      { name: "Write Your Name On Me Somewhere Naughty", cost: 4, category: "Naughty" },
+      { name: "Send A Shower Pic", cost: 5, category: "Naughty" },
+      { name: "Act Like Your Girlfriend In A Voice Call (Spicy)", cost: 5, category: "Naughty" },
+      { name: "Play Truth Or Dare With You (Naughty Mode)", cost: 4, category: "Fun & Playful" },
+      { name: "Describe My Favorite NSFW Memory With You", cost: 2, category: "Naughty" },
+      { name: "Pretend You're Here: Describe What I'd Do", cost: 3, category: "Naughty" },
+      { name: "Mouth Close-Up + Wink 😘", cost: 2, category: "Spicy" },
+      { name: "Choose A Word, I Use It In A Dirty Sentence", cost: 2, category: "Naughty" },
+      { name: "Breakfast In Bed 🍳", cost: 1, category: "Sweet & Caring" },
+      { name: "Sing A Song Just For You 🎶", cost: 2, category: "Sweet & Caring" },
+      { name: "Virtual Karaoke Night 🎤", cost: 2, category: "Fun & Playful" },
+      { name: "Write A Poem About You ✍", cost: 3, category: "Romantic" },
+      { name: "Design A Custom Lock Screen For You 📱", cost: 2, category: "Sweet & Caring" },
+      { name: "Write You A Cheesy Love Letter 💌", cost: 3, category: "Romantic" },
+      { name: "Make A Playlist For You 🎧", cost: 1, category: "Sweet & Caring" },
+      { name: "Write Down 10 Things I Love About You 💕", cost: 2, category: "Romantic" },
+      { name: "One Wish Granted", cost: 3, category: "Special" },
+      { name: "Video Message Just Saying How Much I Love You 🥹", cost: 2, category: "Romantic" },
+      { name: "Pick My Insta Caption For A Day 📸", cost: 3, category: "Fun & Playful" },
+      { name: "Send You A Cute Good Morning Video 🌞", cost: 2, category: "Sweet & Caring" },
+      { name: "A Day Where I Spoil You Rotten 🎁", cost: 4, category: "Sweet & Caring" },
+      { name: "Let You Pick What We Watch 🎬", cost: 1, category: "Sweet & Caring" },
+      { name: "1 Minute Hug IRL", cost: 1, category: "Sweet & Caring" },
+      { name: "Send A Childhood Photo With A Story", cost: 2, category: "Sweet & Caring" },
+      { name: "Draw A Stick Figure Comic About Us 🖍", cost: 4, category: "Fun & Playful" },
+      { name: "Let You Pick My Nickname For A Day 😅", cost: 1, category: "Fun & Playful" },
+      { name: "Make A Fake Movie Poster About Us 🎥", cost: 3, category: "Fun & Playful" },
+      { name: "Tell You My Top 5 Favorite Memories With You 🌈", cost: 2, category: "Romantic" },
+      { name: "Plan Our Future Home On Paper 🏡", cost: 3, category: "Romantic" },
+      { name: "A Cute Hand-Made Coupon For Anything 💳", cost: 1, category: "Sweet & Caring" },
+      { name: "Make A List Of Baby Names I'd Want With You 👶", cost: 2, category: "Romantic" },
+      { name: "Make A Meme About Me", cost: 1, category: "Fun & Playful" },
+      { name: "Draw A Tattoo You'd Get For Me (Even If You Won't)", cost: 1, category: "Fun & Playful" },
+      { name: "Send Me A Selfie Every Hour For A Day 📸", cost: 2, category: "Fun & Playful" },
+      { name: "Do A Mock Interview As My Biggest Fan 😂", cost: 2, category: "Fun & Playful" },
+      { name: "Sing Me A Lullaby Before Bed 🌙", cost: 2, category: "Sweet & Caring" },
+      { name: "Rate 5 Of My Outfits With Brutal Honesty 👗", cost: 2, category: "Fun & Playful" },
+      { name: "Send Me A Pic Wearing My Favorite Color On You 💖", cost: 1, category: "Sweet & Caring" },
+      { name: "Describe Our First Kiss In Dramatic Detail 🎭", cost: 2, category: "Romantic" },
+      { name: "Make A 'How To Date Me' Instruction Manual 📖", cost: 3, category: "Fun & Playful" },
+      { name: "Record Yourself Saying 10 Random Pet Names For Me", cost: 2, category: "Sweet & Caring" },
+      { name: "Send A Post-Workout Selfie (Sweaty & Cute) 💦", cost: 2, category: "Spicy" },
+      { name: "List 5 Things You'd Do To Me If You Were Horny And Bold", cost: 4, category: "Naughty" },
+      { name: "Make A Voice Note Saying My Name With 3 Different Emotions", cost: 2, category: "Fun & Playful" },
+      { name: "Record Yourself Talking About Me Like I'm A Celebrity", cost: 3, category: "Fun & Playful" },
+      { name: "Take A Photo Of What You're Wearing Right Now (No Context)", cost: 2, category: "Spicy" },
+      { name: "Send Me A Voice Note: 3 Compliments, 1 Roast 🔥", cost: 2, category: "Fun & Playful" },
+      { name: "Send Me A Pic Of Your Lips With A Cute/Funny Caption", cost: 2, category: "Spicy" },
+      { name: "Send A Naughty Confession (Real Or Fake 😉)", cost: 3, category: "Naughty" },
+      { name: "Record A Soft Whisper Audio Saying 'I'm All Yours'", cost: 3, category: "Naughty" },
+      { name: "Send Me A Selfie Right Before Falling Asleep 😴", cost: 1, category: "Sweet & Caring" },
+      { name: "Design A Coupon I Can Cash In For Something Naughty 😈", cost: 3, category: "Naughty" },
+      { name: "Send A Close-Up Of Your Eyes", cost: 1, category: "Sweet & Caring" },
+      { name: "Send A Morning Voice Note Without Saying Anything — Just Breathing 😳", cost: 3, category: "Naughty" },
+      { name: "Voice Note: Call Me A Good Girl In 5 Different Tones", cost: 3, category: "Naughty" },
+      // NEW CREATIVE ADDITIONS
+      
+      // SUPER CUTE & ROMANTIC
+      { name: "Send Me A Video Of You Dancing To Our Song 💃", cost: 3, category: "Romantic" },
+      { name: "Record Yourself Reading Me A Bedtime Story 📚", cost: 2, category: "Sweet & Caring" },
+      { name: "Make A Scrapbook Page About Us (Digital) 📖", cost: 4, category: "Romantic" },
+      { name: "Send Me A Video Tour Of Your Childhood Bedroom 🏠", cost: 2, category: "Sweet & Caring" },
+      { name: "Cook My Favorite Meal & Send Progress Pics 👨‍🍳", cost: 3, category: "Sweet & Caring" },
+      { name: "Write Our Wedding Vows (Even If Fake) 💒", cost: 4, category: "Romantic" },
+      { name: "Send A Video Of You Talking To Our Future Kids 👶", cost: 3, category: "Romantic" },
+      { name: "Make A Vision Board Of Our Dream Life Together ✨", cost: 4, category: "Romantic" },
+      { name: "Record A Message For Me To Play When I'm Sad 🤗", cost: 3, category: "Sweet & Caring" },
+      { name: "Send Me A Care Package List You'd Make For Me 📦", cost: 2, category: "Sweet & Caring" },
+      
+      // CREATIVE & OUT OF THE BOX
+      { name: "Create A Fake Dating Profile For Me (Hilarious) 📱", cost: 3, category: "Fun & Playful" },
+      { name: "Do A Photo Shoot With Household Objects As Props 📸", cost: 3, category: "Fun & Playful" },
+      { name: "Send Me A Video Review Of My Kisses ⭐", cost: 2, category: "Fun & Playful" },
+      { name: "Send A Video Of You Doing My Laugh 😂", cost: 2, category: "Fun & Playful" },
+      { name: "Make A Powerpoint About Why I'm The Best GirlFriend 💼", cost: 4, category: "Fun & Playful" },
+      { name: "Send Me A Weather Report But It's About Your Mood 🌤️", cost: 2, category: "Fun & Playful" },
+      { name: "Create A Conspiracy Theory About How We Met 🕵️", cost: 3, category: "Fun & Playful" },
+      { name: "Do A Magic Trick Video Just For Me 🎩", cost: 2, category: "Fun & Playful" },
+      
+      // SPICY & FLIRTY
+      { name: "Send A Video Of You Applying Lip Gloss Slowly 💋", cost: 3, category: "Spicy" },
+      { name: "Do A Yoga Pose Video In Tight Clothes 🧘‍♀️", cost: 4, category: "Spicy" },
+      { name: "Send A Pic Of You Stretching In The Morning ☀️", cost: 3, category: "Spicy" },
+      { name: "Record Yourself Eating Something Messy Seductively 🍓", cost: 4, category: "Spicy" },
+      { name: "Send A Video Of You Playing With Your Hair 💁‍♀️", cost: 2, category: "Spicy" },
+      { name: "Take A Mirror Selfie Right After A Hot Shower 🚿", cost: 5, category: "Spicy" },
+      { name: "Send A Video Of You Putting On Perfume 💐", cost: 3, category: "Spicy" },
+      { name: "Record Yourself Doing Squats (For My 'Health' 😉)", cost: 4, category: "Spicy" },
+      { name: "Send A Pic Of You Biting Your Lip While Reading This 😏", cost: 2, category: "Spicy" },
+      { name: "Video Of You Slowly Taking Off Your Jacket 🧥", cost: 4, category: "Spicy" },
+      
+      // NAUGHTY & HOT
+      { name: "Send A Video Of You Whispering Dirty Things 🤫", cost: 5, category: "Naughty" },
+      { name: "Record Yourself Moaning While Eating Something Delicious 😋", cost: 4, category: "Naughty" },
+      { name: "Video Of You Dancing To A Sexy Song 💃", cost: 5, category: "Naughty" },
+      { name: "Send A Close-Up Video Of You Licking Ice Cream 🍦", cost: 4, category: "Naughty" },
+      { name: "Record A Video Of You In Just My Hoodie 👕", cost: 6, category: "Naughty" },
+      { name: "Video Of You Putting Lotion On Your Legs 🧴", cost: 5, category: "Naughty" },
+      
+      // INTERACTIVE & GAMES
+      { name: "Play 20 Questions With Me (Dirty Version) ❓", cost: 3, category: "Fun & Playful" },
+      { name: "Let Me Control Your Spotify For A Day 🎵", cost: 2, category: "Fun & Playful" },
+      { name: "Send Me Hourly Updates On What You're Thinking About 💭", cost: 3, category: "Fun & Playful" },
+      { name: "Play Would You Rather With Me (Spicy Edition) 🤔", cost: 3, category: "Fun & Playful" },
+      { name: "Let Me Pick Your Phone Wallpaper For A Week 📱", cost: 2, category: "Fun & Playful" },
+      { name: "Send Me A Voice Note Every Time You Think Of Me (1 Day) 💭", cost: 4, category: "Sweet & Caring" },
+      { name: "Play Wordle But The Words Are All About Us 🔤", cost: 2, category: "Fun & Playful" },
+      { name: "Let Me Give You A Dare & You Have To Do It 😈", cost: 3, category: "Fun & Playful" },
+      { name: "Send Me A Selfie With Every Snack You Eat Today 🍪", cost: 2, category: "Fun & Playful" },
+      { name: "Let Me Be Your Personal Photographer For A Day 📸", cost: 4, category: "Fun & Playful" },
+      
+      // PREMIUM EXPERIENCES
+      { name: "Custom Erotic Story Written About Us 📖", cost: 6, category: "Naughty" },
+      { name: "Private Fashion Show Just For Me 👗", cost: 7, category: "Special" },
+      { name: "Send Me 24 Hours Worth Of Content (Pics/Videos/Messages) 📅", cost: 10, category: "Special" },
+      { name: "Create A Custom Calendar With Our Photos 📅", cost: 5, category: "Special" },
+      { name: "Give Me A Virtual Tour Of All Your Favorite Places 🗺️", cost: 5, category: "Special" },
+      { name: "Plan Our Dream Vacation (With Research & Photos) ✈️", cost: 5, category: "Special" },
+
+    ];
+
+    const container = document.getElementById("wish-list");
+    const tokenDisplay = document.getElementById("token-count");
+    const loggedInUser = localStorage.getItem("loggedInUser")?.toLowerCase().trim() || "pari";
+    let tokenCount = 0;
+
+    async function loadTokens() {
+      try {
+        console.log("Trying to load user:", loggedInUser);
+        const docRef = db.collection("tokens").doc(loggedInUser);
+        const docSnap = await docRef.get();
+        console.log("Document found?", docSnap.exists);
+
+        if (docSnap.exists) {
+          tokenCount = docSnap.data().count ?? 0;
+          console.log("Fetched token count:", tokenCount);
+        } else {
+          tokenCount = 0;
+          console.log("No doc found. Creating one.");
+          await docRef.set({ count: 0 });
+        }
+
+        tokenDisplay.textContent = tokenCount;
+      } catch (err) {
+        console.error("loadTokens error:", err);
+        tokenDisplay.textContent = "?";
+      }
+    }
+
+    async function updateTokensInFirebase(newCount) {
+      await db.collection("tokens").doc(loggedInUser).set({ count: newCount });
+      tokenDisplay.textContent = newCount;
+    }
+
+    async function redeem(name, cost) {
+      if (tokenCount >= cost) {
+        tokenCount -= cost;
+        await updateTokensInFirebase(tokenCount);
+
+        const date = new Date().toLocaleString();
+
+        await db.collection("redemptions").add({
+          user: loggedInUser,
+          wish: name,
+          cost: cost,
+          date: firebase.firestore.Timestamp.fromDate(new Date())
+        });
+
+        alert(`You redeemed "${name}"! Get ready 😏`);
+      } else {
+        alert("Not enough tokens, try the admin for a top-up! 🙃");
+      }
+    }
+
+    // Group wishes by category
+    const categories = {};
+    wishes.forEach(wish => {
+      if (!categories[wish.category]) {
+        categories[wish.category] = [];
+      }
+      categories[wish.category].push(wish);
+    });
+
+    // Display wishes grouped by category
+    Object.keys(categories).forEach(category => {
+      const categoryDiv = document.createElement("div");
+      categoryDiv.className = "category";
+      
+      const categoryHeader = document.createElement("h3");
+      categoryHeader.textContent = category;
+      categoryDiv.appendChild(categoryHeader);
+      
+      categories[category].forEach(wish => {
+        const div = document.createElement("div");
+        div.className = "wish";
+        div.innerHTML = `
+          <div><strong>${wish.name}</strong><br>Cost: ${wish.cost} tokens</div>
+          <button onclick="redeem('${wish.name}', ${wish.cost})">Redeem</button>
+        `;
+        categoryDiv.appendChild(div);
+      });
+      
+      container.appendChild(categoryDiv);
+    });
+
+    loadTokens();
+  </script>
+</body>
+</html>

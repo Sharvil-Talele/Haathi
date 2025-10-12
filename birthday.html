@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Birthday Special - Love 2.0</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Arial Rounded MT Bold', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      color: #fff;
+      overflow-x: hidden;
+    }
+    
+    .stars {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: -1;
+    }
+    
+    .star {
+      position: absolute;
+      background: #fff;
+      border-radius: 50%;
+      animation: twinkle 2s infinite alternate;
+    }
+    
+    @keyframes twinkle {
+      0% { opacity: 0.3; transform: scale(1); }
+      100% { opacity: 1; transform: scale(1.2); }
+    }
+    
+    header {
+      text-align: center;
+      padding: 3rem 1rem;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    h1 {
+      font-size: 3rem;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(45deg, #ff9a9e, #fad0c4, #a8edea, #fed6e3);
+      background-size: 400% 400%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: gradientShift 3s ease-in-out infinite;
+    }
+    
+    @keyframes gradientShift {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+    
+    .subtitle {
+      font-size: 1.3rem;
+      opacity: 0.9;
+      margin-top: 1rem;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem 1rem;
+    }
+    
+    .gifts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+    
+    .gift-card {
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(15px);
+      border-radius: 20px;
+      padding: 2rem;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      position: relative;
+      overflow: hidden;
+      animation: slideInUp 0.8s ease forwards;
+      opacity: 0;
+    }
+    
+    .gift-card:nth-child(1) { animation-delay: 0.2s; }
+    .gift-card:nth-child(2) { animation-delay: 0.4s; }
+    .gift-card:nth-child(3) { animation-delay: 0.6s; }
+    
+    @keyframes slideInUp {
+      from {
+        transform: translateY(50px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+    
+    .gift-card:hover {
+      transform: translateY(-10px) scale(1.02);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+      background: rgba(255, 255, 255, 0.25);
+    }
+    
+    .gift-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+      transform: rotate(45deg);
+      transition: all 0.5s;
+      opacity: 0;
+    }
+    
+    .gift-card:hover::before {
+      animation: shimmer 0.8s ease-in-out;
+    }
+    
+    @keyframes shimmer {
+      0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); opacity: 0; }
+      50% { opacity: 1; }
+      100% { transform: translateX(100%) translateY(100%) rotate(45deg); opacity: 0; }
+    }
+    
+    .gift-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      gap: 1rem;
+    }
+    
+    .gift-icon {
+      font-size: 2.5rem;
+      background: linear-gradient(45deg, #ff9a9e, #fad0c4);
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: bounce 2s infinite;
+    }
+    
+    @keyframes bounce {
+      0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+      40% { transform: translateY(-10px); }
+      60% { transform: translateY(-5px); }
+    }
+    
+    .gift-title {
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+    
+    .riddle-text {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 1.5rem;
+      border-radius: 15px;
+      border-left: 4px solid #ff9a9e;
+      font-style: italic;
+      line-height: 1.6;
+      margin: 1rem 0;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .riddle-text::before {
+      content: '"';
+      font-size: 4rem;
+      position: absolute;
+      top: -10px;
+      left: 10px;
+      opacity: 0.3;
+      color: #fad0c4;
+    }
+    
+    .riddle-text::after {
+      content: '"';
+      font-size: 4rem;
+      position: absolute;
+      bottom: -30px;
+      right: 10px;
+      opacity: 0.3;
+      color: #fad0c4;
+    }
+    
+    .hint-text {
+      font-size: 0.9rem;
+      opacity: 0.8;
+      margin-top: 1rem;
+      text-align: center;
+    }
+    
+    .back-btn {
+      position: fixed;
+      top: 2rem;
+      left: 2rem;
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+      border: none;
+      padding: 1rem;
+      border-radius: 50%;
+      color: #fff;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 60px;
+      height: 60px;
+    }
+    
+    .back-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: scale(1.1);
+    }
+    
+    .celebration-msg {
+      text-align: center;
+      margin: 3rem 0;
+      padding: 2rem;
+      background: linear-gradient(135deg, rgba(255, 154, 158, 0.3), rgba(250, 208, 196, 0.3));
+      border-radius: 20px;
+      backdrop-filter: blur(10px);
+    }
+    
+    .celebration-msg h2 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      color: #fad0c4;
+    }
+    
+    @media (max-width: 768px) {
+      .gifts-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      h1 {
+        font-size: 2.2rem;
+      }
+      
+      .back-btn {
+        top: 1rem;
+        left: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="stars" id="stars"></div>
+  
+  <a href="index.html" class="back-btn">←</a>
+  
+  <header>
+    <h1>🎂 Birthday Treasure Hunt 🎁</h1>
+    <p class="subtitle">Three special gifts are waiting for you... can you solve the riddles?</p>
+  </header>
+  
+  <div class="container">
+    <div class="celebration-msg">
+      <h2>Happy Birthday, Beautiful! 🌟</h2>
+      <p>I've hidden three special surprises. Each riddle will lead you to something made with love just for you. Take your time and enjoy the hunt!</p>
+    </div>
+    
+    <div class="gifts-grid">
+      <div class="gift-card">
+        <div class="gift-header">
+          <div class="gift-icon">📚</div>
+          <h3 class="gift-title">Gift #1: The Academic Clue</h3>
+        </div>
+        <div class="riddle-text">
+          Between bolts and lab-bench light,<br>
+          where sketches, tests, and problems write—<br>
+          flip to the page that hides a sign:<br>
+          my little present waits on <strong>page 69</strong>. 🎁
+        </div>
+        <p class="hint-text">💡 Think about where your engineering mind works best...</p>
+      </div>
+      
+      <div class="gift-card">
+        <div class="gift-header">
+          <div class="gift-icon">📁</div>
+          <h3 class="gift-title">Gift #2: The Blue Mystery</h3>
+        </div>
+        <div class="riddle-text">
+          Between folders neat and true,<br>
+          one shines softly, tinted blue.<br>
+          Not the first thing eyes may meet,<br>
+          but tucked inside—my secret sheet.<br>
+          Among the pages, words align,<br>
+          search well, the gift is truly mine.
+        </div>
+        <p class="hint-text">💙 Look for something that has no color...</p>
+      </div>
+      
+      <div class="gift-card">
+        <div class="gift-header">
+          <div class="gift-icon">🎒</div>
+          <h3 class="gift-title">Gift #3: The Hidden Pocket</h3>
+        </div>
+        <div class="riddle-text">
+          Within your SLK so true,<br>
+          a secret quietly waits for you.<br>
+          Not the first zip you will see,<br>
+          but the second hides a key.<br>
+          A smaller pocket, safe and tight,<br>
+          keeps something meant to feel just right.<br>
+          Seek it out, and you may find—<br>
+          a question written in my mind.
+        </div>
+        <p class="hint-text">🔍 Sometimes the best treasures are in unexpected places...</p>
+      </div>
+    </div>
+    
+    <div class="celebration-msg">
+      <h2>✨ Happy Hunting, Love! ✨</h2>
+      <p>Each gift has been chosen with so much thought and care. I hope they bring a smile to your beautiful face and make your special day even more magical. You deserve all the happiness in the world! 💕</p>
+    </div>
+  </div>
+  
+  <script>
+    // Create animated stars
+    function createStars() {
+      const starsContainer = document.getElementById('stars');
+      const numberOfStars = 50;
+      
+      for (let i = 0; i < numberOfStars; i++) {
+        const star = document.createElement('div');
+        star.className = 'star';
+        
+        const size = Math.random() * 3 + 1;
+        star.style.width = size + 'px';
+        star.style.height = size + 'px';
+        star.style.left = Math.random() * 100 + '%';
+        star.style.top = Math.random() * 100 + '%';
+        star.style.animationDelay = Math.random() * 2 + 's';
+        star.style.animationDuration = (Math.random() * 3 + 2) + 's';
+        
+        starsContainer.appendChild(star);
+      }
+    }
+    
+    // Initialize stars when page loads
+    window.addEventListener('load', createStars);
+    
+    // Add some interactive sparkle effects
+    document.addEventListener('mousemove', function(e) {
+      if (Math.random() > 0.9) {
+        const sparkle = document.createElement('div');
+        sparkle.style.position = 'fixed';
+        sparkle.style.left = e.clientX + 'px';
+        sparkle.style.top = e.clientY + 'px';
+        sparkle.style.width = '4px';
+        sparkle.style.height = '4px';
+        sparkle.style.background = '#fff';
+        sparkle.style.borderRadius = '50%';
+        sparkle.style.pointerEvents = 'none';
+        sparkle.style.animation = 'twinkle 0.5s ease-out forwards';
+        sparkle.style.zIndex = '9999';
+        
+        document.body.appendChild(sparkle);
+        
+        setTimeout(() => {
+          sparkle.remove();
+        }, 500);
+      }
+    });
+  </script>
+</body>
+</html>

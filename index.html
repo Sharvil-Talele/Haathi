@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Love 2.0 - Login</title>
+  <style>
+    body {
+      background: linear-gradient(to right, #ffafbd, #ffc3a0);
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      color: #fff;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+    }
+
+    p {
+      font-size: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    input {
+      padding: 0.5rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
+      width: 200px;
+    }
+
+    button {
+      margin-top: 1rem;
+      padding: 0.5rem 1rem;
+      background-color: #fff;
+      color: #ff69b4;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+  </style>
+
+  <!-- ✅ FIXED Firebase scripts for browser -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCcdppTg2pJc9c0iOig_Hp6pDIDAL6_Kjs",
+      authDomain: "pari-ca0b5.firebaseapp.com",
+      projectId: "pari-ca0b5",
+      storageBucket: "pari-ca0b5.appspot.com",
+      messagingSenderId: "426313475739",
+      appId: "1:426313475739:web:adcb0eb1570a593b62483e",
+      measurementId: "G-Y5TJF6Z0MK"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+  </script>
+</head>
+<body>
+  <h1>Welcome to Love 2.0</h1>
+  <p>As always, there's a login before the magic 💖</p>
+
+  <input type="text" id="username" placeholder="Username" />
+  <input type="password" id="password" placeholder="Password" />
+  <button onclick="checkLogin()">Login</button>
+
+  <script>
+    async function checkLogin() {
+      const user = document.getElementById("username").value.toLowerCase();
+      const pass = document.getElementById("password").value;
+
+      try {
+        const docRef = db.collection("users").doc(user);
+        const docSnap = await docRef.get();
+
+        if (docSnap.exists) {
+          const data = docSnap.data();
+          if (data.password === pass) {
+            localStorage.setItem("loggedInUser", user);
+            localStorage.setItem("currentUser", user);
+
+            if (user === "sharvil") {
+              window.location.href = "admin.html";
+            } else {
+              window.location.href = "main.html";
+            }
+          } else {
+            alert("Wrong password. Try again, brainiac.");
+          }
+        } else {
+          alert("No such user. Did you spell your own name wrong?");
+        }
+      } catch (error) {
+        console.error("Login failed:", error);
+        alert("Something broke. Try again or blame the universe.");
+      }
+    }
+  </script>
+</body>
+</html>

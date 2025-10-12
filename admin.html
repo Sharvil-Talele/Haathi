@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel</title>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCcdppTg2pJc9c0iOig_Hp6pDIDAL6_Kjs",
+      authDomain: "pari-ca0b5.firebaseapp.com",
+      projectId: "pari-ca0b5",
+      storageBucket: "pari-ca0b5.appspot.com",
+      messagingSenderId: "426313475739",
+      appId: "1:426313475739:web:adcb0eb1570a593b62483e",
+      measurementId: "G-Y5TJF6Z0MK"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+  </script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to right, #c2e9fb, #ffdde1);
+      margin: 0;
+      padding: 2rem;
+      color: #333;
+      text-align: center;
+    }
+    h1 {
+      color: #e91e63;
+      margin-bottom: 1rem;
+    }
+    .token-display {
+      font-size: 1.5rem;
+      margin-bottom: 2rem;
+      color: #ff1493;
+    }
+    button {
+      padding: 0.75rem 1.5rem;
+      margin: 0.5rem;
+      font-size: 1rem;
+      background-color: #e91e63;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s ease-in-out;
+    }
+    button:hover {
+      background-color: #d81b60;
+    }
+    .log-section {
+      margin-top: 3rem;
+      text-align: left;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+      background: #fff;
+      padding: 1rem;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .log-section h2 {
+      color: #e91e63;
+      text-align: center;
+    }
+    ul#redeem-log {
+      list-style: none;
+      padding: 0;
+    }
+    ul#redeem-log li {
+      padding: 0.5rem;
+      border-bottom: 1px solid #ddd;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    ul#redeem-log li.completed {
+      color: gray;
+      text-decoration: line-through;
+    }
+.tick-button {
+  background-color: #4caf50;
+  border: none;
+  color: white;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 30px;
+  text-align: center;
+  padding: 0;
+}
+
+  </style>
+</head>
+<body>
+  <h1>Admin Control Panel 🔐</h1>
+  <p class="token-display">Current Tokens for Pari: <span id="token-count">0</span></p>
+  
+  <button onclick="changeTokens(1)">➕ Add Token</button>
+  <button onclick="changeTokens(-1)">➖ Remove Token</button>
+  <button onclick="resetTokens()">♻ Reset Tokens</button>
+  <br><br>
+  <button onclick="goBack()">⬅ Back to Login</button>
+
+  <div class="log-section">
+    <h2>Redemption Log 📜</h2>
+    <ul id="redeem-log"></ul>
+  </div>
+
+  <script>
+  const user = "pari";
+  const docRef = db.collection("tokens").doc(user);
+
+  async function fetchTokens() {
+    try {
+      const snap = await docRef.get();
+      const count = snap.exists ? snap.data().count || 0 : 0;
+      document.getElementById("token-count").textContent = count;
+      return count;
+    } catch (err) {
+      console.error("Failed to fetch tokens:", err);
+      return 0;
+    }
+  }
+
+  async function changeTokens(delta) {
+    const current = await fetchTokens();
+    const newCount = Math.max(0, current + delta);
+    await docRef.set({ count: newCount });
+    document.getElementById("token-count").textContent = newCount;
+  }
+
+  async function resetTokens() {
+    await docRef.set({ count: 0 });
+    document.getElementById("token-count").textContent = 0;
+  }
+
+  function goBack() {
+    localStorage.removeItem("loggedInUser");
+    localStorage.removeItem("currentUser");
+    window.location.href = "index.html";
+  }
+
+  async function loadRedemptionLog() {
+    const ul = document.getElementById("redeem-log");
+    ul.innerHTML = "";
+
+    try {
+      const snapshot = await db.collection("redemptions")
+        .where("user", "==", user)
+        .orderBy("date", "desc")
+        .get();
+
+      if (snapshot.empty) {
+        ul.innerHTML = "<li>No wishes redeemed yet.</li>";
+        return;
+      }
+
+      snapshot.forEach(docSnap => {
+        const entry = docSnap.data();
+        const li = document.createElement("li");
+
+        li.innerHTML = `
+          <span>${new Date(entry.date.seconds * 1000).toLocaleString()} — ${entry.wish} (${entry.cost} tokens)</span>
+          <button class="tick-button">✔</button>
+        `;
+
+        li.querySelector(".tick-button").addEventListener("click", async () => {
+          try {
+            await db.collection("redemptions").doc(docSnap.id).delete();
+            li.remove(); // visually remove the entry
+          } catch (err) {
+            console.error("Error deleting redemption:", err);
+          }
+        });
+
+        ul.appendChild(li);
+      });
+    } catch (err) {
+      console.error("Error loading redemption log:", err);
+    }
+  }
+
+  fetchTokens();
+  loadRedemptionLog();
+</script>
+
+</body>
+</html>

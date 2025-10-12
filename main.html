@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCcdppTg2pJc9c0iOig_Hp6pDIDAL6_Kjs",
+      authDomain: "pari-ca0b5.firebaseapp.com",
+      projectId: "pari-ca0b5",
+      storageBucket: "pari-ca0b5.firebasestorage.app",
+      messagingSenderId: "426313475739",
+      appId: "1:426313475739:web:adcb0eb1570a593b62483e",
+      measurementId: "G-Y5TJF6Z0MK"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Love 2.0 - Main</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Arial Rounded MT Bold', sans-serif;
+      background: linear-gradient(135deg, #ff9a9e, #fad0c4);
+      overflow-x: hidden;
+      color: #333;
+      animation: fadeIn 1s ease-in;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    header {
+      text-align: center;
+      padding: 2rem 1rem;
+      color: #fff;
+      background: rgba(255, 105, 180, 0.8);
+      backdrop-filter: blur(5px);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h1 {
+      font-size: 2.8rem;
+      margin-bottom: 0.5rem;
+    }
+    p.tagline {
+      font-size: 1.2rem;
+      font-style: italic;
+    }
+    section {
+      padding: 2rem 1rem;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .card {
+      background: #fff;
+      padding: 1.5rem;
+      border-radius: 15px;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      animation: slideUp 0.8s ease forwards;
+      opacity: 0;
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 6px 30px rgba(0, 0, 0, 0.15);
+    }
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .card h2 {
+      margin-top: 0;
+      color: #ff69b4;
+    }
+    .card p {
+      line-height: 1.6;
+    }
+    .link-card {
+      text-decoration: none;
+      color: inherit;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Welcome to Love 2.0 💕</h1>
+    <p class="tagline">Built just for you, because you're the best part of my life.</p>
+  </header>
+  <section>
+    <a href="journey.html" class="link-card">
+      <div class="card" style="animation-delay: 0.3s">
+        <h2>Our Journey</h2>
+        <p>From the first message to now, every step with you has been magic❤️</p>
+      </div>
+    </a>
+    <a href="quiz.html" class="link-card">
+      <div class="card" style="animation-delay: 0.6s">
+        <h2>Mini Quiz</h2>
+        <p>Test how well you know us with a new quiz—just like last time, but even better. You'll probably ace it again lmaoo</p>
+      </div>
+    </a>
+    <a href="wishes.html" class="link-card">
+      <div class="card" style="animation-delay: 0.9s">
+        <h2>Wish Tokens</h2>
+        <p>You've earned a wish! Use a token to claim a reward from me 🎁</p>
+      </div>
+    </a>
+    <a href="birthday.html" class="link-card">
+      <div class="card" style="animation-delay: 1.2s">
+        <h2>Birthday Special</h2>
+        <p>Something extra special just for your birthday! A celebration made with all my love 🎂</p>
+      </div>
+    </a>
+  </section>
+</body>
+</html>
