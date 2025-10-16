@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connect 4 - Multiplayer</title>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      margin: 0;
+      padding: 2rem;
+      color: #333;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .container {
+      background: white;
+      border-radius: 20px;
+      padding: 2rem;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+      max-width: 600px;
+      width: 100%;
+    }
+    
+    h1 {
+      text-align: center;
+      color: #e91e63;
+      margin-top: 0;
+    }
+    
+    .setup-screen, .game-screen {
+      display: none;
+    }
+    
+    .setup-screen.active, .game-screen.active {
+      display: block;
+    }
+    
+    .btn {
+      background: linear-gradient(135deg, #ff6b9d 0%, #c06c84 100%);
+      color: white;
+      border: none;
+      padding: 1rem 2rem;
+      border-radius: 25px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      width: 100%;
+      margin: 0.5rem 0;
+    }
+    
+    .btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+    }
+    
+    .btn-secondary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    input {
+      width: 100%;
+      padding: 1rem;
+      border: 2px solid #ddd;
+      border-radius: 10px;
+      font-size: 1rem;
+      margin: 0.5rem 0;
+      box-sizing: border-box;
+    }
+    
+    .room-code-display {
+      background: #f0f0f0;
+      padding: 1.5rem;
+      border-radius: 10px;
+      text-align: center;
+      margin: 1rem 0;
+    }
+    
+    .room-code {
+      font-size: 2rem;
+      font-weight: bold;
+      color: #e91e63;
+      letter-spacing: 3px;
+    }
+    
+    .info-text {
+      text-align: center;
+      color: #666;
+      margin: 1rem 0;
+    }
+    
+    .connect4-board {
+      display: grid;
+      grid-template-columns: repeat(7, 60px);
+      gap: 8px;
+      margin: 2rem auto;
+      padding: 20px;
+      background: #2196F3;
+      border-radius: 15px;
+      width: fit-content;
+    }
+    
+    .connect4-cell {
+      width: 60px;
+      height: 60px;
+      background: white;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: 3px solid #1976D2;
+    }
+    
+    .connect4-cell:hover {
+      background: #e3f2fd;
+    }
+    
+    .connect4-cell.red {
+      background: #f44336;
+    }
+    
+    .connect4-cell.yellow {
+      background: #ffeb3b;
+    }
+    
+    .game-info {
+      text-align: center;
+      margin: 1rem 0;
+      font-size: 1.3rem;
+      font-weight: bold;
+      padding: 1rem;
+      background: #f0f0f0;
+      border-radius: 10px;
+    }
+    
+    .player-info {
+      display: flex;
+      justify-content: space-around;
+      margin: 1rem 0;
+      padding: 1rem;
+      background: #f9f9f9;
+      border-radius: 10px;
+    }
+    
+    .player {
+      text-align: center;
+    }
+    
+    .player-color {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      margin: 0 auto 0.5rem;
+    }
+    
+    .back-btn {
+      background: #888;
+      padding: 0.8rem 1.5rem;
+      width: auto;
+      display: inline-block;
+      margin-top: 1rem;
+    }
+    
+    @media (max-width: 768px) {
+      body {
+        padding: 1rem;
+      }
+      
+      .container {
+        padding: 1rem;
+        margin: 0;
+      }
+      
+      h1 {
+        font-size: 1.8rem;
+      }
+      
+      .connect4-board {
+        grid-template-columns: repeat(7, 40px);
+        padding: 15px;
+        gap: 6px;
+      }
+      
+      .connect4-cell {
+        width: 40px;
+        height: 40px;
+        border: 2px solid #1976D2;
+      }
+      
+      .btn {
+        padding: 0.8rem 1.5rem;
+        font-size: 0.95rem;
+      }
+      
+      .room-code {
+        font-size: 1.5rem;
+        letter-spacing: 2px;
+      }
+      
+      .game-info {
+        font-size: 1.1rem;
+        padding: 0.8rem;
+      }
+      
+      .player-info {
+        flex-direction: column;
+        gap: 1rem;
+      }
+      
+      input {
+        font-size: 16px; /* Prevents zoom on iOS */
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .connect4-board {
+        grid-template-columns: repeat(7, 35px);
+        padding: 10px;
+        gap: 5px;
+      }
+      
+      .connect4-cell {
+        width: 35px;
+        height: 35px;
+      }
+      
+      h1 {
+        font-size: 1.5rem;
+      }
+      
+      .room-code {
+        font-size: 1.3rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔴 Connect 4 🟡</h1>
+    
+    <!-- Setup Screen -->
+    <div class="setup-screen active" id="setup-screen">
+      <p class="info-text">Play Connect 4 with your partner online!</p>
+      
+      <button class="btn" onclick="createGame()">Create New Game</button>
+      
+      <div style="text-align: center; margin: 1rem 0; color: #999;">OR</div>
+      
+      <input type="text" id="room-code-input" placeholder="Enter Room Code" maxlength="6" style="text-transform: uppercase;">
+      <button class="btn btn-secondary" onclick="joinGame()">Join Game</button>
+      
+      <a href="games.html"><button class="btn back-btn">← Back to Games</button></a>
+    </div>
+    
+    <!-- Waiting Screen -->
+    <div class="setup-screen" id="waiting-screen">
+      <p class="info-text">Waiting for opponent to join...</p>
+      <div class="room-code-display">
+        <div>Room Code:</div>
+        <div class="room-code" id="display-room-code"></div>
+      </div>
+      <p class="info-text">Share this code with your partner!</p>
+      <button class="btn back-btn" onclick="cancelGame()">Cancel</button>
+    </div>
+    
+    <!-- Game Screen -->
+    <div class="game-screen" id="game-screen">
+      <div class="player-info">
+        <div class="player">
+          <div class="player-color" style="background: #f44336;"></div>
+          <div id="player1-name">Player 1</div>
+        </div>
+        <div class="player">
+          <div class="player-color" style="background: #ffeb3b;"></div>
+          <div id="player2-name">Player 2</div>
+        </div>
+      </div>
+      
+      <div class="game-info" id="game-status">Red's Turn</div>
+      
+      <div class="connect4-board" id="board"></div>
+      
+      <button class="btn back-btn" onclick="leaveGame()">Leave Game</button>
+    </div>
+  </div>
+
+  <script>
+    // Initialize Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyCcdppTg2pJc9c0iOig_Hp6pDIDAL6_Kjs",
+      authDomain: "pari-ca0b5.firebaseapp.com",
+      databaseURL: "https://pari-ca0b5-default-rtdb.asia-southeast1.firebasedatabase.app/",
+      projectId: "pari-ca0b5",
+      storageBucket: "pari-ca0b5.firebasestorage.app",
+      messagingSenderId: "426313475739",
+      appId: "1:426313475739:web:adcb0eb1570a593b62483e"
+    };
+    
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+    
+    let currentRoomCode = null;
+    let playerNumber = null;
+    let gameRef = null;
+    let isMyTurn = false;
+    
+    // Generate random room code
+    function generateRoomCode() {
+      return Math.random().toString(36).substring(2, 8).toUpperCase();
+    }
+    
+    // Create new game
+    function createGame() {
+      currentRoomCode = generateRoomCode();
+      playerNumber = 1;
+      
+      const gameData = {
+        board: Array(42).fill(''),
+        currentPlayer: 'red',
+        player1: 'Player 1',
+        player2: null,
+        status: 'waiting',
+        winner: null
+      };
+      
+      database.ref('games/' + currentRoomCode).set(gameData).then(() => {
+        document.getElementById('display-room-code').textContent = currentRoomCode;
+        showScreen('waiting-screen');
+        listenForOpponent();
+      });
+    }
+    
+    // Join existing game
+    function joinGame() {
+      const code = document.getElementById('room-code-input').value.toUpperCase().trim();
+      if (!code) {
+        alert('Please enter a room code!');
+        return;
+      }
+      
+      currentRoomCode = code;
+      playerNumber = 2;
+      
+      database.ref('games/' + currentRoomCode).once('value').then(snapshot => {
+        if (!snapshot.exists()) {
+          alert('Room not found! Check the code and try again.');
+          return;
+        }
+        
+        const game = snapshot.val();
+        if (game.player2) {
+          alert('This room is already full!');
+          return;
+        }
+        
+        database.ref('games/' + currentRoomCode + '/player2').set('Player 2');
+        database.ref('games/' + currentRoomCode + '/status').set('playing');
+        
+        startGame();
+      });
+    }
+    
+    // Listen for opponent to join
+    function listenForOpponent() {
+      gameRef = database.ref('games/' + currentRoomCode);
+      gameRef.on('value', snapshot => {
+        const game = snapshot.val();
+        if (game && game.status === 'playing') {
+          startGame();
+        }
+      });
+    }
+    
+    // Start the game
+    function startGame() {
+      showScreen('game-screen');
+      initBoard();
+      
+      gameRef = database.ref('games/' + currentRoomCode);
+      gameRef.on('value', snapshot => {
+        const game = snapshot.val();
+        if (game) {
+          updateBoard(game.board);
+          updateGameStatus(game);
+          checkTurn(game);
+          
+          if (game.winner) {
+            setTimeout(() => {
+              alert(game.winner === 'draw' ? "It's a draw!" : game.winner + ' wins! 🎉');
+              leaveGame();
+            }, 500);
+          }
+        }
+      });
+    }
+    
+    // Initialize board
+    function initBoard() {
+      const board = document.getElementById('board');
+      board.innerHTML = '';
+      
+      for (let i = 0; i < 42; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'connect4-cell';
+        cell.dataset.index = i;
+        cell.dataset.col = i % 7;
+        cell.onclick = () => makeMove(parseInt(cell.dataset.col));
+        board.appendChild(cell);
+      }
+    }
+    
+    // Update board display
+    function updateBoard(boardData) {
+      const cells = document.querySelectorAll('.connect4-cell');
+      boardData.forEach((value, index) => {
+        cells[index].className = 'connect4-cell ' + value;
+      });
+    }
+    
+    // Check if it's player's turn
+    function checkTurn(game) {
+      const myColor = playerNumber === 1 ? 'red' : 'yellow';
+      isMyTurn = game.currentPlayer === myColor;
+    }
+    
+    // Update game status
+    function updateGameStatus(game) {
+      const statusEl = document.getElementById('game-status');
+      const myColor = playerNumber === 1 ? 'red' : 'yellow';
+      
+      if (game.currentPlayer === myColor) {
+        statusEl.textContent = "Your Turn!";
+        statusEl.style.background = '#d4edda';
+      } else {
+        statusEl.textContent = "Opponent's Turn...";
+        statusEl.style.background = '#f8d7da';
+      }
+    }
+    
+    // Make a move
+    function makeMove(col) {
+      if (!isMyTurn) {
+        alert("Wait for your turn!");
+        return;
+      }
+      
+      gameRef.once('value').then(snapshot => {
+        const game = snapshot.val();
+        const board = game.board;
+        
+        // Find the lowest empty row in this column
+        let row = -1;
+        for (let r = 5; r >= 0; r--) {
+          if (!board[r * 7 + col]) {
+            row = r;
+            break;
+          }
+        }
+        
+        if (row === -1) {
+          alert("This column is full!");
+          return;
+        }
+        
+        const index = row * 7 + col;
+        board[index] = game.currentPlayer;
+        
+        // Check for winner
+        const winner = checkWinner(board, row, col, game.currentPlayer);
+        
+        // Update game state
+        const updates = {
+          board: board,
+          currentPlayer: game.currentPlayer === 'red' ? 'yellow' : 'red'
+        };
+        
+        if (winner) {
+          updates.winner = winner;
+          updates.status = 'finished';
+        }
+        
+        gameRef.update(updates);
+      });
+    }
+    
+    // Check for winner
+    function checkWinner(board, row, col, color) {
+      const directions = [[0,1], [1,0], [1,1], [1,-1]];
+      
+      for (let [dr, dc] of directions) {
+        let count = 1;
+        
+        // Check positive direction
+        for (let i = 1; i < 4; i++) {
+          const r = row + dr * i;
+          const c = col + dc * i;
+          if (r >= 0 && r < 6 && c >= 0 && c < 7 && board[r * 7 + c] === color) {
+            count++;
+          } else break;
+        }
+        
+        // Check negative direction
+        for (let i = 1; i < 4; i++) {
+          const r = row - dr * i;
+          const c = col - dc * i;
+          if (r >= 0 && r < 6 && c >= 0 && c < 7 && board[r * 7 + c] === color) {
+            count++;
+          } else break;
+        }
+        
+        if (count >= 4) {
+          return color === 'red' ? 'Red' : 'Yellow';
+        }
+      }
+      
+      // Check for draw
+      if (!board.includes('')) {
+        return 'draw';
+      }
+      
+      return null;
+    }
+    
+    // UI Functions
+    function showScreen(screenId) {
+      document.querySelectorAll('.setup-screen, .game-screen').forEach(screen => {
+        screen.classList.remove('active');
+      });
+      document.getElementById(screenId).classList.add('active');
+    }
+    
+    function cancelGame() {
+      if (currentRoomCode) {
+        database.ref('games/' + currentRoomCode).remove();
+      }
+      location.reload();
+    }
+    
+    function leaveGame() {
+      if (gameRef) {
+        gameRef.off();
+      }
+      if (currentRoomCode) {
+        database.ref('games/' + currentRoomCode).remove();
+      }
+      location.reload();
+    }
+  </script>
+</body>
+</html>
