@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <title>Connect 4 - Multiplayer</title>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -17,6 +19,8 @@
       display: flex;
       flex-direction: column;
       align-items: center;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
     
     .container {
@@ -54,6 +58,12 @@
       transition: all 0.3s ease;
       width: 100%;
       margin: 0.5rem 0;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    
+    .btn:active {
+      transform: scale(0.95);
     }
     
     .btn:hover {
@@ -115,6 +125,12 @@
       cursor: pointer;
       transition: all 0.2s ease;
       border: 3px solid #1976D2;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    
+    .connect4-cell:active {
+      transform: scale(0.95);
     }
     
     .connect4-cell:hover {
@@ -286,7 +302,8 @@
       
       <div class="connect4-board" id="board"></div>
       
-      <button class="btn back-btn" onclick="leaveGame()">Leave Game</button>
+      <button class="btn" onclick="resetGame()" style="background: #4CAF50; width: auto; display: inline-block; padding: 0.8rem 2rem; margin: 1rem 0.5rem;">🔄 New Game</button>
+      <button class="btn back-btn" onclick="leaveGame()" style="display: inline-block; margin: 1rem 0.5rem;">Leave Game</button>
     </div>
   </div>
 
@@ -326,7 +343,8 @@
         player1: 'Player 1',
         player2: null,
         status: 'waiting',
-        winner: null
+        winner: null,
+        winnerShown: false
       };
       
       database.ref('games/' + currentRoomCode).set(gameData).then(() => {
@@ -390,10 +408,10 @@
           updateGameStatus(game);
           checkTurn(game);
           
-          if (game.winner) {
+          if (game.winner && !game.winnerShown) {
+            gameRef.update({ winnerShown: true });
             setTimeout(() => {
               alert(game.winner === 'draw' ? "It's a draw!" : game.winner + ' wins! 🎉');
-              leaveGame();
             }, 500);
           }
         }
@@ -477,12 +495,12 @@
         // Update game state
         const updates = {
           board: board,
-          currentPlayer: game.currentPlayer === 'red' ? 'yellow' : 'red'
+          currentPlayer: game.currentPlayer === 'red' ? 'yellow' : 'red',
+          winnerShown: false
         };
         
         if (winner) {
           updates.winner = winner;
-          updates.status = 'finished';
         }
         
         gameRef.update(updates);
@@ -533,6 +551,21 @@
         screen.classList.remove('active');
       });
       document.getElementById(screenId).classList.add('active');
+    }
+    
+    // Reset game (keep same room and players)
+    function resetGame() {
+      if (!gameRef) return;
+      
+      const resetData = {
+        board: Array(42).fill(''),
+        currentPlayer: 'red',
+        winner: null,
+        winnerShown: false,
+        status: 'playing'
+      };
+      
+      gameRef.update(resetData);
     }
     
     function cancelGame() {
