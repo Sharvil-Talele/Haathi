@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Our Games 🎮</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      margin: 0;
+      padding: 0;
+      color: #333;
+      min-height: 100vh;
+    }
+    
+    header {
+      background: linear-gradient(135deg, #ff6b9d 0%, #c06c84 100%);
+      color: white;
+      padding: 2rem;
+      text-align: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+    
+    header h1 {
+      margin: 0;
+      font-size: 2.5rem;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+    
+    .home-btn {
+      display: inline-block;
+      margin: 1.5rem auto;
+      background-color: #e91e63;
+      color: white;
+      padding: 0.8rem 1.5rem;
+      border-radius: 12px;
+      text-decoration: none;
+      font-weight: bold;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    
+    .home-btn:hover {
+      background-color: #d81b60;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+    }
+    
+    .games-container {
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 2rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+    }
+    
+    .game-card {
+      background: white;
+      border-radius: 20px;
+      padding: 2rem;
+      text-align: center;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .game-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, rgba(255,107,157,0.1) 0%, rgba(192,108,132,0.1) 100%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    
+    .game-card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 12px 32px rgba(0,0,0,0.2);
+    }
+    
+    .game-card:hover::before {
+      opacity: 1;
+    }
+    
+    .game-icon {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+    }
+    
+    .game-card h2 {
+      color: #e91e63;
+      margin: 1rem 0;
+      font-size: 1.8rem;
+    }
+    
+    .game-card p {
+      color: #666;
+      margin-bottom: 1.5rem;
+      line-height: 1.6;
+    }
+    
+    .play-btn {
+      background: linear-gradient(135deg, #ff6b9d 0%, #c06c84 100%);
+      color: white;
+      border: none;
+      padding: 0.8rem 2rem;
+      border-radius: 25px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    
+    .play-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+    }
+    
+    .coming-soon {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: #ffd700;
+      color: #333;
+      padding: 0.3rem 0.8rem;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: bold;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    
+    .game-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      overflow-y: auto;
+    }
+    
+    .game-modal.active {
+      display: flex;
+    }
+    
+    .modal-content {
+      background: white;
+      border-radius: 20px;
+      padding: 2rem;
+      max-width: 90%;
+      max-height: 90%;
+      overflow: auto;
+      position: relative;
+      margin: 2rem;
+    }
+    
+    .close-btn {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: #e91e63;
+      color: white;
+      border: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      font-size: 1.5rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      z-index: 10;
+    }
+    
+    .close-btn:hover {
+      background: #d81b60;
+      transform: rotate(90deg);
+    }
+
+    /* Connect 4 Game Styles */
+    .connect4-board {
+      display: grid;
+      grid-template-columns: repeat(7, 60px);
+      gap: 8px;
+      margin: 2rem auto;
+      padding: 20px;
+      background: #2196F3;
+      border-radius: 15px;
+      width: fit-content;
+    }
+    
+    .connect4-cell {
+      width: 60px;
+      height: 60px;
+      background: white;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: 3px solid #1976D2;
+    }
+    
+    .connect4-cell:hover {
+      background: #e3f2fd;
+    }
+    
+    .connect4-cell.red {
+      background: #f44336;
+    }
+    
+    .connect4-cell.yellow {
+      background: #ffeb3b;
+    }
+    
+    .game-info {
+      text-align: center;
+      margin: 1rem 0;
+      font-size: 1.3rem;
+      font-weight: bold;
+      color: #333;
+    }
+    
+    .reset-btn {
+      display: block;
+      margin: 1rem auto;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 0.8rem 2rem;
+      border-radius: 25px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .reset-btn:hover {
+      background: #45a049;
+      transform: scale(1.05);
+    }
+
+    /* Tic Tac Toe Styles */
+    .tictactoe-board {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      gap: 10px;
+      margin: 2rem auto;
+      width: fit-content;
+    }
+    
+    .tictactoe-cell {
+      width: 100px;
+      height: 100px;
+      background: #fff;
+      border: 3px solid #e91e63;
+      border-radius: 10px;
+      font-size: 3rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-weight: bold;
+    }
+    
+    .tictactoe-cell:hover:not(.filled) {
+      background: #ffe4f0;
+    }
+    
+    .tictactoe-cell.x {
+      color: #e91e63;
+    }
+    
+    .tictactoe-cell.o {
+      color: #2196F3;
+    }
+
+    /* Rock Paper Scissors Styles */
+    .rps-choices {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      margin: 2rem 0;
+    }
+    
+    .rps-choice {
+      width: 120px;
+      height: 120px;
+      background: white;
+      border: 4px solid #e91e63;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 4rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .rps-choice:hover {
+      background: #ffe4f0;
+      transform: scale(1.1);
+    }
+    
+    .rps-result {
+      text-align: center;
+      margin: 2rem 0;
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+    
+    .rps-scores {
+      display: flex;
+      justify-content: space-around;
+      margin: 2rem 0;
+      font-size: 1.2rem;
+    }
+
+    @media (max-width: 768px) {
+      .games-container {
+        grid-template-columns: 1fr;
+        padding: 1rem;
+      }
+      
+      .connect4-board {
+        grid-template-columns: repeat(7, 45px);
+      }
+      
+      .connect4-cell {
+        width: 45px;
+        height: 45px;
+      }
+      
+      .tictactoe-board {
+        grid-template-columns: repeat(3, 80px);
+      }
+      
+      .tictactoe-cell {
+        width: 80px;
+        height: 80px;
+        font-size: 2.5rem;
+      }
+      
+      .rps-choice {
+        width: 90px;
+        height: 90px;
+        font-size: 3rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🎮 Our Game Zone 🎮</h1>
+    <p style="margin-top: 0.5rem; font-size: 1.1rem;">Play together, laugh together!</p>
+  </header>
+  
+  <div style="text-align:center;">
+    <a href="main.html" class="home-btn">🏠 Back Home</a>
+  </div>
+  
+  <div class="games-container">
+    <!-- Connect 4 -->
+    <div class="game-card" onclick="openGame('connect4')">
+      <div class="game-icon">🔴🟡</div>
+      <h2>Connect 4</h2>
+      <p>Classic strategy game! Connect four discs in a row to win. First to align four wins!</p>
+      <button class="play-btn">Play Now</button>
+    </div>
+    
+    <!-- Tic Tac Toe -->
+    <div class="game-card" onclick="openGame('tictactoe')">
+      <div class="game-icon">❌⭕</div>
+      <h2>Tic Tac Toe</h2>
+      <p>The timeless classic! Get three in a row before your opponent does.</p>
+      <button class="play-btn">Play Now</button>
+    </div>
+    
+    <!-- Rock Paper Scissors -->
+    <div class="game-card" onclick="openGame('rps')">
+      <div class="game-icon">✊✋✌️</div>
+      <h2>Rock Paper Scissors</h2>
+      <p>Quick and simple! Best of 5 rounds wins the match.</p>
+      <button class="play-btn">Play Now</button>
+    </div>
+    
+    <!-- Ludo - Coming Soon -->
+    <div class="game-card">
+      <span class="coming-soon">Coming Soon!</span>
+      <div class="game-icon">🎲</div>
+      <h2>Ludo</h2>
+      <p>Roll the dice and race your tokens to the finish! Classic board game fun.</p>
+      <button class="play-btn" style="opacity: 0.5; cursor: not-allowed;" disabled>Coming Soon</button>
+    </div>
+    
+    <!-- Chess - Coming Soon -->
+    <div class="game-card">
+      <span class="coming-soon">Coming Soon!</span>
+      <div class="game-icon">♟️</div>
+      <h2>Chess</h2>
+      <p>The ultimate strategy game. Checkmate your opponent and claim victory!</p>
+      <button class="play-btn" style="opacity: 0.5; cursor: not-allowed;" disabled>Coming Soon</button>
+    </div>
+    
+    <!-- Memory Match - Coming Soon -->
+    <div class="game-card">
+      <span class="coming-soon">Coming Soon!</span>
+      <div class="game-icon">🃏</div>
+      <h2>Memory Match</h2>
+      <p>Test your memory! Find matching pairs in this fun card game.</p>
+      <button class="play-btn" style="opacity: 0.5; cursor: not-allowed;" disabled>Coming Soon</button>
+    </div>
+  </div>
+
+  <!-- Connect 4 Modal -->
+  <div id="connect4-modal" class="game-modal">
+    <div class="modal-content">
+      <button class="close-btn" onclick="closeGame('connect4')">×</button>
+      <h2 style="text-align: center; color: #e91e63;">Connect 4</h2>
+      <div class="game-info" id="connect4-info">Red's Turn</div>
+      <div class="connect4-board" id="connect4-board"></div>
+      <button class="reset-btn" onclick="resetConnect4()">New Game</button>
+    </div>
+  </div>
+
+  <!-- Tic Tac Toe Modal -->
+  <div id="tictactoe-modal" class="game-modal">
+    <div class="modal-content">
+      <button class="close-btn" onclick="closeGame('tictactoe')">×</button>
+      <h2 style="text-align: center; color: #e91e63;">Tic Tac Toe</h2>
+      <div class="game-info" id="tictactoe-info">X's Turn</div>
+      <div class="tictactoe-board" id="tictactoe-board"></div>
+      <button class="reset-btn" onclick="resetTicTacToe()">New Game</button>
+    </div>
+  </div>
+
+  <!-- Rock Paper Scissors Modal -->
+  <div id="rps-modal" class="game-modal">
+    <div class="modal-content">
+      <button class="close-btn" onclick="closeGame('rps')">×</button>
+      <h2 style="text-align: center; color: #e91e63;">Rock Paper Scissors</h2>
+      <div class="rps-scores">
+        <div>You: <span id="player-score">0</span></div>
+        <div>Computer: <span id="computer-score">0</span></div>
+      </div>
+      <div class="game-info">Choose your weapon!</div>
+      <div class="rps-choices">
+        <div class="rps-choice" onclick="playRPS('rock')">✊</div>
+        <div class="rps-choice" onclick="playRPS('paper')">✋</div>
+        <div class="rps-choice" onclick="playRPS('scissors')">✌️</div>
+      </div>
+      <div class="rps-result" id="rps-result"></div>
+      <button class="reset-btn" onclick="resetRPS()">New Game</button>
+    </div>
+  </div>
+
+  <script>
+    // Game state variables
+    let connect4Board = [];
+    let connect4CurrentPlayer = 'red';
+    let tictactoeBoard = ['', '', '', '', '', '', '', '', ''];
+    let tictactoeCurrentPlayer = 'X';
+    let rpsPlayerScore = 0;
+    let rpsComputerScore = 0;
+
+    // Open and Close Game Modals
+    function openGame(gameName) {
+      document.getElementById(gameName + '-modal').classList.add('active');
+      if (gameName === 'connect4' && connect4Board.length === 0) initConnect4();
+      if (gameName === 'tictactoe') resetTicTacToe();
+      if (gameName === 'rps') resetRPS();
+    }
+
+    function closeGame(gameName) {
+      document.getElementById(gameName + '-modal').classList.remove('active');
+    }
+
+    // Connect 4 Game Logic
+    function initConnect4() {
+      connect4Board = Array(6).fill().map(() => Array(7).fill(''));
+      connect4CurrentPlayer = 'red';
+      const board = document.getElementById('connect4-board');
+      board.innerHTML = '';
+      
+      for (let row = 0; row < 6; row++) {
+        for (let col = 0; col < 7; col++) {
+          const cell = document.createElement('div');
+          cell.className = 'connect4-cell';
+          cell.dataset.col = col;
+          cell.onclick = () => dropDisc(col);
+          board.appendChild(cell);
+        }
+      }
+      updateConnect4Info();
+    }
+
+    function dropDisc(col) {
+      for (let row = 5; row >= 0; row--) {
+        if (!connect4Board[row][col]) {
+          connect4Board[row][col] = connect4CurrentPlayer;
+          updateConnect4Display();
+          
+          if (checkConnect4Win(row, col)) {
+            setTimeout(() => {
+              alert(connect4CurrentPlayer.toUpperCase() + ' wins! 🎉');
+              resetConnect4();
+            }, 100);
+            return;
+          }
+          
+          connect4CurrentPlayer = connect4CurrentPlayer === 'red' ? 'yellow' : 'red';
+          updateConnect4Info();
+          return;
+        }
+      }
+    }
+
+    function updateConnect4Display() {
+      const cells = document.querySelectorAll('.connect4-cell');
+      let index = 0;
+      for (let row = 0; row < 6; row++) {
+        for (let col = 0; col < 7; col++) {
+          cells[index].className = 'connect4-cell ' + connect4Board[row][col];
+          index++;
+        }
+      }
+    }
+
+    function checkConnect4Win(row, col) {
+      const directions = [[0,1], [1,0], [1,1], [1,-1]];
+      for (let [dr, dc] of directions) {
+        let count = 1;
+        for (let i = 1; i < 4; i++) {
+          const r = row + dr * i, c = col + dc * i;
+          if (r >= 0 && r < 6 && c >= 0 && c < 7 && connect4Board[r][c] === connect4CurrentPlayer) count++;
+          else break;
+        }
+        for (let i = 1; i < 4; i++) {
+          const r = row - dr * i, c = col - dc * i;
+          if (r >= 0 && r < 6 && c >= 0 && c < 7 && connect4Board[r][c] === connect4CurrentPlayer) count++;
+          else break;
+        }
+        if (count >= 4) return true;
+      }
+      return false;
+    }
+
+    function updateConnect4Info() {
+      document.getElementById('connect4-info').textContent = 
+        (connect4CurrentPlayer === 'red' ? '🔴 Red' : '🟡 Yellow') + "'s Turn";
+    }
+
+    function resetConnect4() {
+      connect4Board = [];
+      initConnect4();
+    }
+
+    // Tic Tac Toe Game Logic
+    function initTicTacToe() {
+      const board = document.getElementById('tictactoe-board');
+      board.innerHTML = '';
+      
+      for (let i = 0; i < 9; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'tictactoe-cell';
+        cell.dataset.index = i;
+        cell.onclick = () => makeTicTacToeMove(i);
+        board.appendChild(cell);
+      }
+    }
+
+    function makeTicTacToeMove(index) {
+      if (tictactoeBoard[index]) return;
+      
+      tictactoeBoard[index] = tictactoeCurrentPlayer;
+      const cells = document.querySelectorAll('.tictactoe-cell');
+      cells[index].textContent = tictactoeCurrentPlayer;
+      cells[index].classList.add(tictactoeCurrentPlayer.toLowerCase(), 'filled');
+      
+      if (checkTicTacToeWin()) {
+        setTimeout(() => {
+          alert(tictactoeCurrentPlayer + ' wins! 🎉');
+          resetTicTacToe();
+        }, 100);
+        return;
+      }
+      
+      if (!tictactoeBoard.includes('')) {
+        setTimeout(() => {
+          alert("It's a draw! 🤝");
+          resetTicTacToe();
+        }, 100);
+        return;
+      }
+      
+      tictactoeCurrentPlayer = tictactoeCurrentPlayer === 'X' ? 'O' : 'X';
+      updateTicTacToeInfo();
+    }
+
+    function checkTicTacToeWin() {
+      const wins = [[0,1,2], [3,4,5], [6,7,8], [0,3,6], [1,4,7], [2,5,8], [0,4,8], [2,4,6]];
+      return wins.some(combo => 
+        combo.every(i => tictactoeBoard[i] === tictactoeCurrentPlayer)
+      );
+    }
+
+    function updateTicTacToeInfo() {
+      document.getElementById('tictactoe-info').textContent = tictactoeCurrentPlayer + "'s Turn";
+    }
+
+    function resetTicTacToe() {
+      tictactoeBoard = ['', '', '', '', '', '', '', '', ''];
+      tictactoeCurrentPlayer = 'X';
+      initTicTacToe();
+      updateTicTacToeInfo();
+    }
+
+    // Rock Paper Scissors Game Logic
+    function playRPS(playerChoice) {
+      const choices = ['rock', 'paper', 'scissors'];
+      const computerChoice = choices[Math.floor(Math.random() * 3)];
+      
+      let result = '';
+      if (playerChoice === computerChoice) {
+        result = "It's a tie! Both chose " + playerChoice;
+      } else if (
+        (playerChoice === 'rock' && computerChoice === 'scissors') ||
+        (playerChoice === 'paper' && computerChoice === 'rock') ||
+        (playerChoice === 'scissors' && computerChoice === 'paper')
+      ) {
+        result = 'You win! ' + playerChoice + ' beats ' + computerChoice;
+        rpsPlayerScore++;
+      } else {
+        result = 'Computer wins! ' + computerChoice + ' beats ' + playerChoice;
+        rpsComputerScore++;
+      }
+      
+      document.getElementById('rps-result').textContent = result;
+      document.getElementById('player-score').textContent = rpsPlayerScore;
+      document.getElementById('computer-score').textContent = rpsComputerScore;
+      
+      if (rpsPlayerScore === 5 || rpsComputerScore === 5) {
+        setTimeout(() => {
+          alert(rpsPlayerScore === 5 ? 'You won the match! 🎉' : 'Computer won the match! 💔');
+          resetRPS();
+        }, 1000);
+      }
+    }
+
+    function resetRPS() {
+      rpsPlayerScore = 0;
+      rpsComputerScore = 0;
+      document.getElementById('player-score').textContent = '0';
+      document.getElementById('computer-score').textContent = '0';
+      document.getElementById('rps-result').textContent = '';
+    }
+  </script>
+</body>
+</html>
