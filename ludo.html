@@ -191,7 +191,7 @@
     }
 
     .home-spot-red { background: var(--color-red-light); }
-    .home-spot-green { background: var(--color-green-light); }
+    .home-spot-blue { background: var(--color-blue-light); }
     
     .path-cell {
       background: white;
@@ -199,9 +199,13 @@
 
     .home-path-red { background: var(--color-red-light); }
     .home-path-green { background: var(--color-green-light); }
+    .home-path-yellow { background: var(--color-yellow-light); }
+    .home-path-blue { background: var(--color-blue-light); }
     
     .start-cell-red { background: var(--color-red-light); }
     .start-cell-green { background: var(--color-green-light); }
+    .start-cell-yellow { background: var(--color-yellow-light); }
+    .start-cell-blue { background: var(--color-blue-light); }
 
     .center-cell {
       background: linear-gradient(45deg, var(--color-red-light), var(--color-green-light), var(--color-blue-light), var(--color-yellow-light));
@@ -234,11 +238,18 @@
 
     .token.red { background: var(--color-red); }
     .token.green { background: var(--color-green); }
+    .token.yellow { background: var(--color-yellow); }
+    .token.blue { background: var(--color-blue); }
     
     .token.movable {
       cursor: pointer;
       box-shadow: 0 0 15px 5px #00ffff;
       animation: pulse 1.2s infinite;
+    }
+    
+    .token.animating {
+      box-shadow: 0 0 20px 10px #ff00ff;
+      transform: scale(1.2);
     }
 
     @keyframes pulse {
@@ -322,6 +333,8 @@
     
     .player-card.red { background: var(--color-red-light); }
     .player-card.green { background: var(--color-green-light); }
+    .player-card.yellow { background: var(--color-yellow-light); }
+    .player-card.blue { background: var(--color-blue-light); }
     
     .player-card.active {
       border-color: #333;
@@ -415,6 +428,8 @@
     let myColor = null;
     let gameRef = null;
     let localGameCache = null; // Cache game state to avoid flickering
+    let isAnimating = false; // Prevents actions during animation
+    const HOP_SPEED_MS = 200; // Speed for token animation
 
     // --- START OF NEW LUDO LOGIC ---
 
@@ -438,8 +453,14 @@
       53: { r: 8, c: 2 }, 54: { r: 8, c: 3 }, 55: { r: 8, c: 4 }, 56: { r: 8, c: 5 }, 57: { r: 8, c: 6 }, 58: { r: 8, c: 7 }
     };
 
+    // Unused, but kept for consistency
     const greenHomePathMap = {
       53: { r: 2, c: 8 }, 54: { r: 3, c: 8 }, 55: { r: 4, c: 8 }, 56: { r: 5, c: 8 }, 57: { r: 6, c: 8 }, 58: { r: 7, c: 8 }
+    };
+    
+    // NEW: Blue Home Path (Opposite Red)
+    const blueHomePathMap = {
+      53: { r: 8, c: 14 }, 54: { r: 8, c: 13 }, 55: { r: 8, c: 12 }, 56: { r: 8, c: 11 }, 57: { r: 8, c: 10 }, 58: { r: 8, c: 9 }
     };
 
     // Home yard spots (relative to their 6x6 home area)
@@ -454,7 +475,9 @@
 
     const safeCells = [1, 9, 14, 22, 27, 35, 40, 48];
     const redStart = 1;
-    const greenStart = 27;
+    const blueStart = 27; // CHANGED from greenStart
+    const greenStart = 14; // Corrected green start (unused)
+    const yellowStart = 40; // Unused
 
     // Helper to get a cell's type and classes
     function getCellType(r, c) {
@@ -467,16 +490,18 @@
 
       // Check home paths
       if (c == 8 && r >= 2 && r <= 7) return 'path-cell home-path-green'; // Green home path
-      if (c == 8 && r >= 9 && r <= 14) return 'path-cell home-path-yellow'; // Yellow home path (unused)
+      if (c == 8 && r >= 9 && r <= 14) return 'path-cell home-path-yellow'; // Yellow home path
       if (r == 8 && c >= 2 && c <= 7) return 'path-cell home-path-red'; // Red home path
-      if (r == 8 && c >= 9 && c <= 14) return 'path-cell home-path-blue'; // Blue home path (unused)
-
+      if (r == 8 && c >= 9 && c <= 14) return 'path-cell home-path-blue'; // Blue home path
+      
       // Main path
       for (let i = 1; i <= 52; i++) {
         if (pathMap[i].r === r && pathMap[i].c === c) {
           let classes = 'path-cell';
           if (i === redStart) classes += ' start-cell-red';
           if (i === greenStart) classes += ' start-cell-green';
+          if (i === blueStart) classes += ' start-cell-blue'; // ADDED
+          if (i === yellowStart) classes += ' start-cell-yellow';
           if (safeCells.includes(i)) classes += ' star-cell';
           return classes;
         }
@@ -491,8 +516,8 @@
       if (color === 'red') {
         return relativePos;
       }
-      if (color === 'green') {
-        return ((relativePos - 1 + (greenStart - 1)) % 52) + 1;
+      if (color === 'blue') { // CHANGED from green
+        return ((relativePos - 1 + (blueStart - 1)) % 52) + 1;
       }
       return -1;
     }
@@ -500,10 +525,12 @@
     // Helper to find a token's on-screen coordinates
     function getCoords(color, tokenIndex, tokenPos) {
       if (tokenPos === 0) { // In yard
-        return color === 'red' ? redHomeSpots[tokenIndex] : greenHomeSpots[tokenIndex];
+        if (color === 'red') return redHomeSpots[tokenIndex];
+        if (color === 'blue') return blueHomeSpots[tokenIndex]; // CHANGED
       }
       if (tokenPos >= 53 && tokenPos <= 58) { // On home path
-        return color === 'red' ? redHomePathMap[tokenPos] : greenHomePathMap[tokenPos];
+        if (color === 'red') return redHomePathMap[tokenPos];
+        if (color === 'blue') return blueHomePathMap[tokenPos]; // CHANGED
       }
       if (tokenPos >= 1 && tokenPos <= 52) { // On main path
         const absPos = getAbsolutePosition(color, tokenPos);
@@ -545,7 +572,7 @@
         players: {
           // 0 = yard, 1-52 = main path, 53-58 = home path, 59 = finished
           red: { tokens: [0, 0, 0, 0], finished: 0 },
-          green: { tokens: [0, 0, 0, 0], finished: 0 }
+          blue: { tokens: [0, 0, 0, 0], finished: 0 } // CHANGED from green
         },
         currentTurn: 'red',
         diceValue: 0,
@@ -573,7 +600,7 @@
       
       currentRoomCode = code;
       playerNumber = 2;
-      myColor = 'green';
+      myColor = 'blue'; // CHANGED from green
       
       database.ref('ludo/' + currentRoomCode).once('value').then(snapshot => {
         if (!snapshot.exists()) {
@@ -587,7 +614,7 @@
           return;
         }
         
-        database.ref('ludo/' + currentRoomCode + '/player2').set('green');
+        database.ref('ludo/' + currentRoomCode + '/player2').set('blue'); // CHANGED
         database.ref('ludo/' + currentRoomCode + '/status').set('playing');
         
         startGame();
@@ -616,6 +643,9 @@
       gameRef.on('value', snapshot => {
         const game = snapshot.val();
         if (game) {
+          if (!isAnimating) { // Only update display if not animating
+            renderAllTokens(game);
+          }
           localGameCache = game; // Cache the state
           updateGameDisplay(game);
           
@@ -672,44 +702,42 @@
           <br>
           Finished: ${game.players.red.finished} / 4
         </div>
-        <div class="player-card green ${game.currentTurn === 'green' ? 'active' : ''}">
-          🟢 Green Player ${myColor === 'green' ? '(You)' : ''}
+        <div class="player-card blue ${game.currentTurn === 'blue' ? 'active' : ''}">
+          🔵 Blue Player ${myColor === 'blue' ? '(You)' : ''}
           <br>
-          Finished: ${game.players.green.finished} / 4
+          Finished: ${game.players.blue.finished} / 4
         </div>
       `;
       
       // Update dice
       diceEl.textContent = game.diceValue > 0 ? game.diceValue : '🎲';
-      if (isMyTurn && !game.canMove) {
+      if (isMyTurn && !game.canMove && !isAnimating) {
         diceEl.classList.remove('disabled');
         diceResultEl.textContent = "Roll the dice!";
       } else {
         diceEl.classList.add('disabled');
-        if (game.diceValue > 0) {
+        if (isMyTurn && game.canMove) {
           diceResultEl.textContent = `You rolled: ${game.diceValue}. Move a token!`;
-        } else if (isMyTurn) {
-          diceResultEl.textContent = "Roll the dice!";
-        } else {
+        } else if (!isMyTurn && game.canMove) {
+          diceResultEl.textContent = `Opponent rolled: ${game.diceValue}. Waiting...`;
+        } else if (!isMyTurn && !game.canMove) {
           diceResultEl.textContent = "Waiting for opponent...";
         }
       }
-
-      // Render tokens
-      renderAllTokens(game);
     }
 
+    // Renders tokens based on game state
     function renderAllTokens(game) {
       // Clear all existing tokens from board
       document.querySelectorAll('.token-container').forEach(c => c.innerHTML = '');
 
       const isMyTurn = game.currentTurn === myColor;
-      const validMoves = (isMyTurn && game.canMove) 
+      const validMoves = (isMyTurn && game.canMove && !isAnimating) 
         ? getValidMoves(myColor, game.diceValue, game.players[myColor].tokens)
         : [];
       
       renderPlayerTokens('red', game.players.red, validMoves);
-      renderPlayerTokens('green', game.players.green, validMoves);
+      renderPlayerTokens('blue', game.players.blue, validMoves); // CHANGED
     }
 
     function renderPlayerTokens(color, playerState, validMoves) {
@@ -742,64 +770,124 @@
     
     // Roll dice
     function rollDice() {
-      // Use the cached state to prevent rapid clicks
-      if (!localGameCache || localGameCache.currentTurn !== myColor || localGameCache.canMove) {
+      // Use the cached state to prevent rapid clicks & rolling during animation
+      if (!localGameCache || localGameCache.currentTurn !== myColor || localGameCache.canMove || isAnimating) {
         return;
       }
       // Disable dice locally to prevent re-roll
       document.getElementById('dice').classList.add('disabled');
 
-      gameRef.once('value').then(snapshot => {
-        const game = snapshot.val();
-        
-        if (game.currentTurn !== myColor || game.canMove) {
-          return; // Abort if state is not right
-        }
-        
-        const dice = document.getElementById('dice');
-        const diceResultEl = document.getElementById('dice-result');
-        dice.classList.add('rolling');
-        
-        setTimeout(() => {
-          const roll = Math.floor(Math.random() * 6) + 1;
-          dice.textContent = roll;
-          dice.classList.remove('rolling');
+      // Reset dice value for all players before rolling
+      gameRef.update({ diceValue: 0, canMove: false }).then(() => {
+        gameRef.once('value').then(snapshot => {
+          const game = snapshot.val();
           
-          const myTokens = game.players[myColor].tokens;
-          const validMoves = getValidMoves(myColor, roll, myTokens);
-
-          const updates = {
-            diceValue: roll
-          };
-
-          if (validMoves.length === 0) {
-            // No valid moves, pass the turn automatically
-            diceResultEl.textContent = `You rolled: ${roll}. No moves!`;
-            updates.canMove = false;
-            updates.currentTurn = (myColor === 'red' ? 'green' : 'red');
-            updates.diceValue = 0; // Reset dice for next player
-            
-            // Give user time to see the roll
-            setTimeout(() => {
-              gameRef.update(updates);
-            }, 1500); 
-
-          } else {
-            // Valid moves available
-            diceResultEl.textContent = `You rolled: ${roll}. Move a token!`;
-            updates.canMove = true;
-            gameRef.update(updates);
+          if (game.currentTurn !== myColor || game.canMove) {
+            return; // Abort if state is not right
           }
           
-        }, 500);
+          const dice = document.getElementById('dice');
+          const diceResultEl = document.getElementById('dice-result');
+          dice.classList.add('rolling');
+          
+          setTimeout(() => {
+            const roll = Math.floor(Math.random() * 6) + 1;
+            dice.textContent = roll;
+            dice.classList.remove('rolling');
+            
+            const myTokens = game.players[myColor].tokens;
+            const validMoves = getValidMoves(myColor, roll, myTokens);
+
+            const updates = {
+              diceValue: roll
+            };
+
+            if (validMoves.length === 0) {
+              // No valid moves, pass the turn automatically
+              diceResultEl.textContent = `You rolled: ${roll}. No moves!`;
+              updates.canMove = false;
+              updates.currentTurn = (myColor === 'red' ? 'blue' : 'red');
+              
+              // Give user time to see the roll
+              setTimeout(() => {
+                gameRef.update(updates);
+              }, 1500); 
+
+            } else {
+              // Valid moves available
+              diceResultEl.textContent = `You rolled: ${roll}. Move a token!`;
+              updates.canMove = true;
+              gameRef.update(updates);
+            }
+            
+          }, 500);
+        });
       });
     }
     
-    // NEW: Handle clicking a token to move it
+    // NEW: Animation controller for clicking a token
     function onTokenClick(color, tokenIndex) {
-      if (color !== myColor) return;
+      if (isAnimating || color !== myColor) return;
 
-      // Use a transaction to ensure atomic updates
+      isAnimating = true;
+      const tokenEl = document.querySelector(`.token[data-color="${color}"][data-index="${tokenIndex}"]`);
+      if (!tokenEl) {
+        isAnimating = false;
+        return;
+      }
+
+      // Disable dice and other movable tokens
+      document.getElementById('dice').classList.add('disabled');
+      document.querySelectorAll('.token.movable').forEach(t => {
+        t.classList.remove('movable');
+        t.onclick = null; // Remove click listener
+      });
+      tokenEl.classList.add('animating'); // Highlight the moving token
+
+      const game = localGameCache;
+      const diceValue = game.diceValue;
+      const currentPos = game.players[color].tokens[tokenIndex];
+      let step = 1;
+
+      function hop() {
+        if (step > diceValue) {
+          // Animation finished, now run transaction
+          tokenEl.classList.remove('animating');
+          runMoveTransaction(color, tokenIndex); // This will set isAnimating = false
+          return;
+        }
+
+        let nextPos;
+        if (currentPos === 0) { // Moving from yard
+          nextPos = 1;
+          step = diceValue + 1; // Set step to end loop, it's one move
+        } else {
+          nextPos = currentPos + step;
+          if (currentPos > 0 && currentPos <= 52 && nextPos > 52) { // Entering home path
+            nextPos = 52 + (nextPos - currentPos);
+          }
+        }
+        
+        const coords = getCoords(color, tokenIndex, nextPos);
+        if (coords) {
+          const targetCell = document.getElementById(`cell-r${coords.r}-c${coords.c}`);
+          if (targetCell) {
+            targetCell.querySelector('.token-container').appendChild(tokenEl);
+          }
+        }
+        
+        if (currentPos !== 0) { // Don't increment step if it was a yard move
+          step++;
+        }
+        
+        setTimeout(hop, HOP_SPEED_MS);
+      }
+
+      hop(); // Start the animation
+    }
+
+    // NEW: This function contains the original transaction logic
+    function runMoveTransaction(color, tokenIndex) {
       gameRef.transaction(game => {
         if (!game) return; // Game doesn't exist
         
@@ -842,7 +930,7 @@
           if (newPos >= 1 && newPos <= 52) {
             const absPos = getAbsolutePosition(myColor, newPos);
             if (!safeCells.includes(absPos)) {
-              const opponentColor = (myColor === 'red' ? 'green' : 'red');
+              const opponentColor = (myColor === 'red' ? 'blue' : 'red'); // CHANGED
               const opponentTokens = game.players[opponentColor].tokens;
               
               for (let i = 0; i < 4; i++) {
@@ -850,7 +938,7 @@
                   const oppAbsPos = getAbsolutePosition(opponentColor, opponentTokens[i]);
                   if (oppAbsPos === absPos) {
                     game.players[opponentColor].tokens[i] = 0; // Send back to yard
-                    // getsExtraTurn = true; // (Optional rule)
+                    getsExtraTurn = true; // Extra turn for a kill
                   }
                 }
               }
@@ -863,15 +951,18 @@
           }
 
           if (!getsExtraTurn) {
-            game.currentTurn = (myColor === 'red' ? 'green' : 'red');
+            game.currentTurn = (myColor === 'red' ? 'blue' : 'red'); // CHANGED
           }
         }
 
         // Reset turn state
         game.canMove = false;
-        game.diceValue = 0;
+        // We DON'T reset diceValue here, so opponent can see it
         
         return game; // Commit transaction
+      }).then(() => {
+        isAnimating = false; // Animation and transaction are complete
+        // The 'value' listener will now fire and re-render the board correctly
       });
     }
     
@@ -889,7 +980,7 @@
     
     function cancelGame() {
       if (currentRoomCode) {
-        database.ref('ludo/' + currentRoomCode).remove();
+        database.ref('ludo/'C' + currentRoomCode).remove();
       }
       location.reload();
     }
