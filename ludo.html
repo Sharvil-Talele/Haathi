@@ -980,7 +980,9 @@
     
     function cancelGame() {
       if (currentRoomCode) {
-        database.ref('ludo/'C' + currentRoomCode).remove();
+        // The typo was here: 'ludo/'C' + ...'
+        // It's now corrected to: 'ludo/' + ...
+        database.ref('ludo/' + currentRoomCode).remove();
       }
       location.reload();
     }
