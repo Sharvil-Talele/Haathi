@@ -344,7 +344,8 @@
         player1: 'Player 1',
         player2: null,
         status: 'waiting',
-        winner: null
+        winner: null,
+        winnerShown: false
       };
       
       database.ref('games/' + currentRoomCode).set(gameData).then(() => {
@@ -408,16 +409,11 @@
           updateGameStatus(game);
           checkTurn(game);
           
-          if (game.winner && !hasShownWinner) {
-            hasShownWinner = true;
+          if (game.winner && !game.winnerShown) {
+            gameRef.update({ winnerShown: true });
             setTimeout(() => {
               alert(game.winner === 'draw' ? "It's a draw!" : game.winner + ' wins! 🎉');
             }, 500);
-          }
-          
-          // Reset flag when new game starts
-          if (!game.winner && hasShownWinner) {
-            hasShownWinner = false;
           }
         }
       });
@@ -500,7 +496,8 @@
         // Update game state
         const updates = {
           board: board,
-          currentPlayer: game.currentPlayer === 'red' ? 'yellow' : 'red'
+          currentPlayer: game.currentPlayer === 'red' ? 'yellow' : 'red',
+          winnerShown: false
         };
         
         if (winner) {
@@ -561,12 +558,11 @@
     function resetGame() {
       if (!gameRef) return;
       
-      hasShownWinner = false; // Reset local flag
-      
       const resetData = {
         board: Array(42).fill(''),
         currentPlayer: 'red',
         winner: null,
+        winnerShown: false,
         status: 'playing'
       };
       
