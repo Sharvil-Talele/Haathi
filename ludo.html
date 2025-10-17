@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Ludo - Multiplayer</title>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      margin: 0;
+      padding: 1rem;
+      color: #333;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    
+    .container {
+      background: white;
+      border-radius: 20px;
+      padding: 1.5rem;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+      max-width: 800px;
+      width: 100%;
+    }
+    
+    h1 {
+      text-align: center;
+      color: #e91e63;
+      margin-top: 0;
+      font-size: 2rem;
+    }
+    
+    .setup-screen, .game-screen {
+      display: none;
+    }
+    
+    .setup-screen.active, .game-screen.active {
+      display: block;
+    }
+    
+    .btn {
+      background: linear-gradient(135deg, #ff6b9d 0%, #c06c84 100%);
+      color: white;
+      border: none;
+      padding: 1rem 2rem;
+      border-radius: 25px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      width: 100%;
+      margin: 0.5rem 0;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    
+    .btn:active {
+      transform: scale(0.95);
+    }
+    
+    .btn-secondary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    input {
+      width: 100%;
+      padding: 1rem;
+      border: 2px solid #ddd;
+      border-radius: 10px;
+      font-size: 16px;
+      margin: 0.5rem 0;
+      box-sizing: border-box;
+    }
+    
+    .room-code-display {
+      background: #f0f0f0;
+      padding: 1.5rem;
+      border-radius: 10px;
+      text-align: center;
+      margin: 1rem 0;
+    }
+    
+    .room-code {
+      font-size: 2rem;
+      font-weight: bold;
+      color: #e91e63;
+      letter-spacing: 3px;
+    }
+    
+    .info-text {
+      text-align: center;
+      color: #666;
+      margin: 1rem 0;
+    }
+    
+    .ludo-board {
+      width: 100%;
+      max-width: 600px;
+      aspect-ratio: 1;
+      margin: 1rem auto;
+      position: relative;
+      background: white;
+      border: 3px solid #333;
+      display: grid;
+      grid-template-columns: repeat(15, 1fr);
+      grid-template-rows: repeat(15, 1fr);
+    }
+    
+    .cell {
+      border: 1px solid #ddd;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      font-size: 0.6rem;
+    }
+    
+    .home-area {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      gap: 2px;
+      padding: 5%;
+    }
+    
+    .home-area.red { background: #ff4444; }
+    .home-area.green { background: #44ff44; }
+    .home-area.yellow { background: #ffff44; }
+    .home-area.blue { background: #4444ff; }
+    
+    .home-spot {
+      background: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .safe-cell {
+      background: #e8f5e9;
+    }
+    
+    .star-cell::after {
+      content: '★';
+      position: absolute;
+      font-size: 1.5rem;
+      color: #ffd700;
+    }
+    
+    .path-cell {
+      background: white;
+    }
+    
+    .path-cell.red-path { background: #ffcccc; }
+    .path-cell.green-path { background: #ccffcc; }
+    .path-cell.yellow-path { background: #ffffcc; }
+    .path-cell.blue-path { background: #ccccff; }
+    
+    .token {
+      width: 80%;
+      height: 80%;
+      border-radius: 50%;
+      border: 2px solid #333;
+      cursor: pointer;
+      transition: transform 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 0.7rem;
+    }
+    
+    .token:hover {
+      transform: scale(1.1);
+    }
+    
+    .token.red { background: #ff4444; }
+    .token.green { background: #44ff44; }
+    .token.yellow { background: #ffff44; }
+    .token.blue { background: #4444ff; }
+    
+    .dice-container {
+      text-align: center;
+      margin: 1rem 0;
+      padding: 1rem;
+      background: #f9f9f9;
+      border-radius: 10px;
+    }
+    
+    .dice {
+      width: 80px;
+      height: 80px;
+      background: white;
+      border: 3px solid #333;
+      border-radius: 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      font-weight: bold;
+      cursor: pointer;
+      margin: 1rem;
+      transition: transform 0.1s;
+    }
+    
+    .dice:active {
+      transform: scale(0.95);
+    }
+    
+    .dice.rolling {
+      animation: roll 0.5s;
+    }
+    
+    @keyframes roll {
+      0%, 100% { transform: rotate(0deg); }
+      25% { transform: rotate(90deg); }
+      50% { transform: rotate(180deg); }
+      75% { transform: rotate(270deg); }
+    }
+    
+    .game-info {
+      text-align: center;
+      margin: 1rem 0;
+      font-size: 1.2rem;
+      font-weight: bold;
+      padding: 1rem;
+      background: #f0f0f0;
+      border-radius: 10px;
+    }
+    
+    .player-info {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+    
+    .player-card {
+      padding: 1rem;
+      border-radius: 10px;
+      text-align: center;
+      font-weight: bold;
+      border: 3px solid transparent;
+    }
+    
+    .player-card.red { background: #ffcccc; }
+    .player-card.green { background: #ccffcc; }
+    .player-card.yellow { background: #ffffcc; }
+    .player-card.blue { background: #ccccff; }
+    
+    .player-card.active {
+      border-color: #333;
+      box-shadow: 0 0 20px rgba(0,0,0,0.3);
+    }
+    
+    .back-btn {
+      background: #888;
+      padding: 0.8rem 1.5rem;
+      width: auto;
+      display: inline-block;
+      margin-top: 1rem;
+    }
+    
+    @media (max-width: 768px) {
+      h1 { font-size: 1.5rem; }
+      .ludo-board { max-width: 100%; }
+      .dice { width: 60px; height: 60px; font-size: 2rem; }
+      .player-info { grid-template-columns: 1fr; }
+      .container { padding: 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎲 Ludo 🎲</h1>
+    
+    <!-- Setup Screen -->
+    <div class="setup-screen active" id="setup-screen">
+      <p class="info-text">Play Ludo with your partner online! (2 players)</p>
+      
+      <button class="btn" onclick="createGame()">Create New Game</button>
+      
+      <div style="text-align: center; margin: 1rem 0; color: #999;">OR</div>
+      
+      <input type="text" id="room-code-input" placeholder="Enter Room Code" maxlength="6" style="text-transform: uppercase;">
+      <button class="btn btn-secondary" onclick="joinGame()">Join Game</button>
+      
+      <a href="games.html"><button class="btn back-btn">← Back to Games</button></a>
+    </div>
+    
+    <!-- Waiting Screen -->
+    <div class="setup-screen" id="waiting-screen">
+      <p class="info-text">Waiting for opponent to join...</p>
+      <div class="room-code-display">
+        <div>Room Code:</div>
+        <div class="room-code" id="display-room-code"></div>
+      </div>
+      <p class="info-text">Share this code with your partner!</p>
+      <button class="btn back-btn" onclick="cancelGame()">Cancel</button>
+    </div>
+    
+    <!-- Game Screen -->
+    <div class="game-screen" id="game-screen">
+      <div class="player-info" id="player-info"></div>
+      
+      <div class="game-info" id="game-status">Red's Turn</div>
+      
+      <div class="dice-container">
+        <div>Click to roll the dice!</div>
+        <div class="dice" id="dice" onclick="rollDice()">🎲</div>
+        <div id="dice-result"></div>
+      </div>
+      
+      <div class="ludo-board" id="board"></div>
+      
+      <button class="btn back-btn" onclick="leaveGame()">Leave Game</button>
+    </div>
+  </div>
+
+  <script>
+    // Initialize Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyCcdppTg2pJc9c0iOig_Hp6pDIDAL6_Kjs",
+      authDomain: "pari-ca0b5.firebaseapp.com",
+      databaseURL: "https://pari-ca0b5-default-rtdb.asia-southeast1.firebasedatabase.app/",
+      projectId: "pari-ca0b5",
+      storageBucket: "pari-ca0b5.firebasestorage.app",
+      messagingSenderId: "426313475739",
+      appId: "1:426313475739:web:adcb0eb1570a593b62483e"
+    };
+    
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+    
+    let currentRoomCode = null;
+    let playerNumber = null;
+    let myColor = null;
+    let gameRef = null;
+    
+    // Ludo board path (52 cells in a circle)
+    const boardPath = [];
+    
+    // Generate random room code
+    function generateRoomCode() {
+      return Math.random().toString(36).substring(2, 8).toUpperCase();
+    }
+    
+    // Create new game
+    function createGame() {
+      currentRoomCode = generateRoomCode();
+      playerNumber = 1;
+      myColor = 'red';
+      
+      const gameData = {
+        players: {
+          red: { tokens: [0, 0, 0, 0], finished: 0 },
+          green: { tokens: [0, 0, 0, 0], finished: 0 }
+        },
+        currentTurn: 'red',
+        diceValue: 0,
+        canMove: false,
+        player1: 'red',
+        player2: null,
+        status: 'waiting',
+        winner: null
+      };
+      
+      database.ref('ludo/' + currentRoomCode).set(gameData).then(() => {
+        document.getElementById('display-room-code').textContent = currentRoomCode;
+        showScreen('waiting-screen');
+        listenForOpponent();
+      });
+    }
+    
+    // Join existing game
+    function joinGame() {
+      const code = document.getElementById('room-code-input').value.toUpperCase().trim();
+      if (!code) {
+        alert('Please enter a room code!');
+        return;
+      }
+      
+      currentRoomCode = code;
+      playerNumber = 2;
+      myColor = 'green';
+      
+      database.ref('ludo/' + currentRoomCode).once('value').then(snapshot => {
+        if (!snapshot.exists()) {
+          alert('Room not found! Check the code and try again.');
+          return;
+        }
+        
+        const game = snapshot.val();
+        if (game.player2) {
+          alert('This room is already full!');
+          return;
+        }
+        
+        database.ref('ludo/' + currentRoomCode + '/player2').set('green');
+        database.ref('ludo/' + currentRoomCode + '/status').set('playing');
+        
+        startGame();
+      });
+    }
+    
+    // Listen for opponent to join
+    function listenForOpponent() {
+      gameRef = database.ref('ludo/' + currentRoomCode);
+      gameRef.on('value', snapshot => {
+        const game = snapshot.val();
+        if (game && game.status === 'playing') {
+          startGame();
+        }
+      });
+    }
+    
+    // Start the game
+    function startGame() {
+      showScreen('game-screen');
+      initBoard();
+      
+      gameRef = database.ref('ludo/' + currentRoomCode);
+      gameRef.on('value', snapshot => {
+        const game = snapshot.val();
+        if (game) {
+          updateGameDisplay(game);
+          
+          if (game.winner) {
+            setTimeout(() => {
+              alert(game.winner + ' wins! 🎉');
+              leaveGame();
+            }, 500);
+          }
+        }
+      });
+    }
+    
+    // Initialize simplified board
+    function initBoard() {
+      const board = document.getElementById('board');
+      board.innerHTML = `
+        <div style="grid-column: 1/7; grid-row: 1/7; background: #ff4444; border: 2px solid #333; display: flex; align-items: center; justify-content: center; font-size: 2rem; color: white; font-weight: bold;">RED<br>HOME</div>
+        <div style="grid-column: 7/9; grid-row: 1/7; background: #eee;"></div>
+        <div style="grid-column: 9/16; grid-row: 1/7; background: #44ff44; border: 2px solid #333; display: flex; align-items: center; justify-content: center; font-size: 2rem; color: white; font-weight: bold;">GREEN<br>HOME</div>
+        
+        <div style="grid-column: 1/7; grid-row: 7/9; background: #eee;"></div>
+        <div style="grid-column: 7/9; grid-row: 7/9; background: #ffd700; border: 2px solid #333; display: flex; align-items: center; justify-content: center; font-size: 3rem;">🏆</div>
+        <div style="grid-column: 9/16; grid-row: 7/9; background: #eee;"></div>
+        
+        <div style="grid-column: 1/7; grid-row: 9/16; background: #ffff44; border: 2px solid #333; display: flex; align-items: center; justify-content: center; font-size: 2rem; color: #333; font-weight: bold;">YELLOW<br>HOME</div>
+        <div style="grid-column: 7/9; grid-row: 9/16; background: #eee;"></div>
+        <div style="grid-column: 9/16; grid-row: 9/16; background: #4444ff; border: 2px solid #333; display: flex; align-items: center; justify-content: center; font-size: 2rem; color: white; font-weight: bold;">BLUE<br>HOME</div>
+      `;
+    }
+    
+    // Update game display
+    function updateGameDisplay(game) {
+      const statusEl = document.getElementById('game-status');
+      const isMyTurn = game.currentTurn === myColor;
+      
+      statusEl.textContent = isMyTurn ? "Your Turn!" : "Opponent's Turn...";
+      statusEl.style.background = isMyTurn ? '#d4edda' : '#f8d7da';
+      
+      // Update player cards
+      const playerInfoEl = document.getElementById('player-info');
+      playerInfoEl.innerHTML = `
+        <div class="player-card red ${game.currentTurn === 'red' ? 'active' : ''}">
+          🔴 Red Player<br>
+          Tokens Home: ${4 - game.players.red.finished}
+        </div>
+        <div class="player-card green ${game.currentTurn === 'green' ? 'active' : ''}">
+          🟢 Green Player<br>
+          Tokens Home: ${4 - game.players.green.finished}
+        </div>
+      `;
+      
+      // Show/hide dice
+      const diceEl = document.getElementById('dice');
+      if (isMyTurn && !game.canMove) {
+        diceEl.style.opacity = '1';
+        diceEl.style.cursor = 'pointer';
+        diceEl.style.pointerEvents = 'auto';
+      } else {
+        diceEl.style.opacity = '0.5';
+        diceEl.style.cursor = 'not-allowed';
+        diceEl.style.pointerEvents = 'none';
+      }
+      
+      if (game.diceValue > 0) {
+        document.getElementById('dice-result').textContent = `You rolled: ${game.diceValue}`;
+      }
+    }
+    
+    // Roll dice
+    function rollDice() {
+      gameRef.once('value').then(snapshot => {
+        const game = snapshot.val();
+        
+        if (game.currentTurn !== myColor || game.canMove) {
+          return;
+        }
+        
+        const dice = document.getElementById('dice');
+        dice.classList.add('rolling');
+        
+        setTimeout(() => {
+          const roll = Math.floor(Math.random() * 6) + 1;
+          dice.textContent = roll;
+          dice.classList.remove('rolling');
+          
+          gameRef.update({
+            diceValue: roll,
+            canMove: true
+          });
+          
+          // Auto-move token (simplified - moves one random token)
+          setTimeout(() => {
+            moveToken(roll);
+          }, 1000);
+          
+        }, 500);
+      });
+    }
+    
+    // Move token (simplified version)
+    function moveToken(steps) {
+      gameRef.once('value').then(snapshot => {
+        const game = snapshot.val();
+        const player = game.players[myColor];
+        
+        // Find first token that can move
+        let moved = false;
+        for (let i = 0; i < 4; i++) {
+          if (player.tokens[i] < 57) {
+            player.tokens[i] += steps;
+            if (player.tokens[i] >= 57) {
+              player.finished++;
+            }
+            moved = true;
+            break;
+          }
+        }
+        
+        // Check for winner
+        let winner = null;
+        if (player.finished === 4) {
+          winner = myColor.toUpperCase();
+        }
+        
+        // Update game state
+        const updates = {
+          players: game.players,
+          diceValue: 0,
+          canMove: false,
+          currentTurn: game.currentTurn === 'red' ? 'green' : 'red'
+        };
+        
+        if (winner) {
+          updates.winner = winner;
+          updates.status = 'finished';
+        }
+        
+        gameRef.update(updates);
+      });
+    }
+    
+    // UI Functions
+    function showScreen(screenId) {
+      document.querySelectorAll('.setup-screen, .game-screen').forEach(screen => {
+        screen.classList.remove('active');
+      });
+      document.getElementById(screenId).classList.add('active');
+    }
+    
+    function cancelGame() {
+      if (currentRoomCode) {
+        database.ref('ludo/' + currentRoomCode).remove();
+      }
+      location.reload();
+    }
+    
+    function leaveGame() {
+      if (gameRef) {
+        gameRef.off();
+      }
+      if (currentRoomCode) {
+        database.ref('ludo/' + currentRoomCode).remove();
+      }
+      location.reload();
+    }
+  </script>
+</body>
+</html>
