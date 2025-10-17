@@ -768,7 +768,7 @@
       });
     }
     
-    // Roll dice
+ // Roll dice
     function rollDice() {
       // Use the cached state to prevent rapid clicks & rolling during animation
       if (!localGameCache || localGameCache.currentTurn !== myColor || localGameCache.canMove || isAnimating) {
@@ -776,52 +776,51 @@
       }
       // Disable dice locally to prevent re-roll
       document.getElementById('dice').classList.add('disabled');
+      
+      // DO NOT RESET DICE VALUE HERE. This was the bug.
 
-      // Reset dice value for all players before rolling
-      gameRef.update({ diceValue: 0, canMove: false }).then(() => {
-        gameRef.once('value').then(snapshot => {
-          const game = snapshot.val();
+      gameRef.once('value').then(snapshot => {
+        const game = snapshot.val();
+        
+        if (game.currentTurn !== myColor || game.canMove) {
+          return; // Abort if state is not right
+        }
+        
+        const dice = document.getElementById('dice');
+        const diceResultEl = document.getElementById('dice-result');
+        dice.classList.add('rolling');
+        
+        setTimeout(() => {
+          const roll = Math.floor(Math.random() * 6) + 1;
+          dice.textContent = roll;
+          dice.classList.remove('rolling');
           
-          if (game.currentTurn !== myColor || game.canMove) {
-            return; // Abort if state is not right
+          const myTokens = game.players[myColor].tokens;
+          const validMoves = getValidMoves(myColor, roll, myTokens);
+
+          const updates = {
+            diceValue: roll
+          };
+
+          if (validMoves.length === 0) {
+            // No valid moves, pass the turn automatically
+            diceResultEl.textContent = `You rolled: ${roll}. No moves!`;
+            updates.canMove = false;
+            updates.currentTurn = (myColor === 'red' ? 'blue' : 'red');
+            
+            // Give user time to see the roll, then pass turn
+            setTimeout(() => {
+              gameRef.update(updates);
+            }, 1500); 
+
+          } else {
+            // Valid moves available
+            diceResultEl.textContent = `You rolled: ${roll}. Move a token!`;
+            updates.canMove = true;
+            gameRef.update(updates);
           }
           
-          const dice = document.getElementById('dice');
-          const diceResultEl = document.getElementById('dice-result');
-          dice.classList.add('rolling');
-          
-          setTimeout(() => {
-            const roll = Math.floor(Math.random() * 6) + 1;
-            dice.textContent = roll;
-            dice.classList.remove('rolling');
-            
-            const myTokens = game.players[myColor].tokens;
-            const validMoves = getValidMoves(myColor, roll, myTokens);
-
-            const updates = {
-              diceValue: roll
-            };
-
-            if (validMoves.length === 0) {
-              // No valid moves, pass the turn automatically
-              diceResultEl.textContent = `You rolled: ${roll}. No moves!`;
-              updates.canMove = false;
-              updates.currentTurn = (myColor === 'red' ? 'blue' : 'red');
-              
-              // Give user time to see the roll
-              setTimeout(() => {
-                gameRef.update(updates);
-              }, 1500); 
-
-            } else {
-              // Valid moves available
-              diceResultEl.textContent = `You rolled: ${roll}. Move a token!`;
-              updates.canMove = true;
-              gameRef.update(updates);
-            }
-            
-          }, 500);
-        });
+        }, 500);
       });
     }
     
@@ -886,7 +885,7 @@
       hop(); // Start the animation
     }
 
-    // NEW: This function contains the original transaction logic
+// NEW: This function contains the original transaction logic
     function runMoveTransaction(color, tokenIndex) {
       gameRef.transaction(game => {
         if (!game) return; // Game doesn't exist
@@ -924,7 +923,6 @@
         if (game.players[myColor].finished === 4) {
           game.winner = myColor;
           game.status = 'finished';
-          // Don't change turn, just end game
         } else {
           // Check for "kill"
           if (newPos >= 1 && newPos <= 52) {
@@ -950,19 +948,23 @@
             getsExtraTurn = true;
           }
 
-          if (!getsExtraTurn) {
-            game.currentTurn = (myColor === 'red' ? 'blue' : 'red'); // CHANGED
+          // ** THIS IS THE KEY LOGIC FIX **
+          if (getsExtraTurn) {
+            // It's my turn again, I need to roll
+            game.currentTurn = myColor; // Stays the same
+            game.canMove = false;
+          } else {
+            // It's the opponent's turn
+            game.currentTurn = (myColor === 'red' ? 'blue' : 'red');
+            game.canMove = false;
           }
         }
-
-        // Reset turn state
-        game.canMove = false;
-        // We DON'T reset diceValue here, so opponent can see it
+        
+        // We no longer reset diceValue, it's overwritten by the next roll
         
         return game; // Commit transaction
       }).then(() => {
         isAnimating = false; // Animation and transaction are complete
-        // The 'value' listener will now fire and re-render the board correctly
       });
     }
     
