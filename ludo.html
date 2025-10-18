@@ -800,7 +800,7 @@
       hop();
     }
 
-    // Runs the database update *after* animation
+   // Runs the database update *after* animation
     function runMoveTransaction(color, tokenIndex) {
       gameRef.transaction(game => {
         if (!game) return;
@@ -866,13 +866,18 @@
           }
         }
         
-        // We *keep* the diceValue so the opponent can see it.
-        // The UI logic in updateGameDisplay now handles
-        // hiding it when it's the next player's turn to roll.
-        
         return game;
       }).then(() => {
+        // ** THIS IS THE FIX **
         isAnimating = false; // Animation and transaction are complete
+        
+        // The Firebase listener already updated the localGameCache,
+        // but the UI was drawn while isAnimating was true.
+        // We manually re-run updateGameDisplay() NOW that 
+        // isAnimating is false, which will correctly enable the dice.
+        if (localGameCache) {
+          updateGameDisplay(localGameCache);
+        }
       });
     }
 
