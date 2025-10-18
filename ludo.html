@@ -123,7 +123,6 @@
       margin: 1rem 0;
     }
     
-    /* NEW LUDO BOARD STYLES */
     .ludo-board {
       width: var(--board-size);
       height: var(--board-size);
@@ -378,8 +377,7 @@
       
       <input type="text" id="room-code-input" placeholder="Enter Room Code" maxlength="6" style="text-transform: uppercase;">
       <button class="btn btn-secondary" onclick="joinGame()">Join Game</button>
-      
-      </div>
+    </div>
     
     <div class="setup-screen" id="waiting-screen">
       <p class="info-text">Waiting for opponent to join...</p>
@@ -431,9 +429,8 @@
     let isAnimating = false; // Prevents actions during animation
     const HOP_SPEED_MS = 200; // Speed for token animation
 
-    // --- START OF NEW LUDO LOGIC ---
+    // --- LUDO LOGIC CONSTANTS ---
 
-    // Board layout constants
     const pathMap = {
       1: { r: 7, c: 2 }, 2: { r: 7, c: 3 }, 3: { r: 7, c: 4 }, 4: { r: 7, c: 5 }, 5: { r: 7, c: 6 },
       6: { r: 6, c: 7 }, 7: { r: 5, c: 7 }, 8: { r: 4, c: 7 }, 9: { r: 3, c: 7 }, 10: { r: 2, c: 7 },
@@ -448,119 +445,24 @@
       45: { r: 9, c: 6 }, 46: { r: 9, c: 5 }, 47: { r: 9, c: 4 }, 48: { r: 9, c: 3 }, 49: { r: 9, c: 2 },
       50: { r: 9, c: 1 }, 51: { r: 8, c: 1 }, 52: { r: 7, c: 1 }
     };
-
     const redHomePathMap = {
       53: { r: 8, c: 2 }, 54: { r: 8, c: 3 }, 55: { r: 8, c: 4 }, 56: { r: 8, c: 5 }, 57: { r: 8, c: 6 }, 58: { r: 8, c: 7 }
     };
-
-    // Unused, but kept for consistency
-    const greenHomePathMap = {
-      53: { r: 2, c: 8 }, 54: { r: 3, c: 8 }, 55: { r: 4, c: 8 }, 56: { r: 5, c: 8 }, 57: { r: 6, c: 8 }, 58: { r: 7, c: 8 }
-    };
-    
-    // NEW: Blue Home Path (Opposite Red)
     const blueHomePathMap = {
       53: { r: 8, c: 14 }, 54: { r: 8, c: 13 }, 55: { r: 8, c: 12 }, 56: { r: 8, c: 11 }, 57: { r: 8, c: 10 }, 58: { r: 8, c: 9 }
     };
-
-    // Home yard spots (relative to their 6x6 home area)
     const homeSpots = [
       { r: 2, c: 2 }, { r: 2, c: 4 }, { r: 4, c: 2 }, { r: 4, c: 4 }
     ];
-
-    const redHomeSpots = homeSpots.map(s => ({ r: s.r, c: s.c })); // Top-left 1-6
-    const greenHomeSpots = homeSpots.map(s => ({ r: s.r, c: s.c + 9 })); // Top-right 1-6
-    const yellowHomeSpots = homeSpots.map(s => ({ r: s.r + 9, c: s.c })); // Bottom-left 9-15
-    const blueHomeSpots = homeSpots.map(s => ({ r: s.r + 9, c: s.c + 9 })); // Bottom-right 9-15
-
+    const redHomeSpots = homeSpots.map(s => ({ r: s.r, c: s.c })); // Top-left
+    const blueHomeSpots = homeSpots.map(s => ({ r: s.r + 9, c: s.c + 9 })); // Bottom-right
     const safeCells = [1, 9, 14, 22, 27, 35, 40, 48];
     const redStart = 1;
-    const blueStart = 27; // CHANGED from greenStart
-    const greenStart = 14; // Corrected green start (unused)
-    const yellowStart = 40; // Unused
+    const blueStart = 27;
+    const greenStart = 14;
+    const yellowStart = 40;
 
-    // Helper to get a cell's type and classes
-    function getCellType(r, c) {
-      if (r >= 1 && r <= 6 && c >= 1 && c <= 6) return 'home-area home-area-red';
-      if (r >= 1 && r <= 6 && c >= 10 && c <= 15) return 'home-area home-area-green';
-      if (r >= 10 && r <= 15 && c >= 1 && c <= 6) return 'home-area home-area-yellow';
-      if (r >= 10 && r <= 15 && c >= 10 && c <= 15) return 'home-area home-area-blue';
-      
-      if (r >= 7 && r <= 9 && c >= 7 && c <= 9) return 'center-cell';
-
-      // Check home paths
-      if (c == 8 && r >= 2 && r <= 7) return 'path-cell home-path-green'; // Green home path
-      if (c == 8 && r >= 9 && r <= 14) return 'path-cell home-path-yellow'; // Yellow home path
-      if (r == 8 && c >= 2 && c <= 7) return 'path-cell home-path-red'; // Red home path
-      if (r == 8 && c >= 9 && c <= 14) return 'path-cell home-path-blue'; // Blue home path
-      
-      // Main path
-      for (let i = 1; i <= 52; i++) {
-        if (pathMap[i].r === r && pathMap[i].c === c) {
-          let classes = 'path-cell';
-          if (i === redStart) classes += ' start-cell-red';
-          if (i === greenStart) classes += ' start-cell-green';
-          if (i === blueStart) classes += ' start-cell-blue'; // ADDED
-          if (i === yellowStart) classes += ' start-cell-yellow';
-          if (safeCells.includes(i)) classes += ' star-cell';
-          return classes;
-        }
-      }
-      
-      return 'empty-cell';
-    }
-
-    // Helper to get absolute board position from a player's relative position
-    function getAbsolutePosition(color, relativePos) {
-      if (relativePos === 0 || relativePos > 52) return -1; // Not on main path
-      if (color === 'red') {
-        return relativePos;
-      }
-      if (color === 'blue') { // CHANGED from green
-        return ((relativePos - 1 + (blueStart - 1)) % 52) + 1;
-      }
-      return -1;
-    }
-
-    // Helper to find a token's on-screen coordinates
-    function getCoords(color, tokenIndex, tokenPos) {
-      if (tokenPos === 0) { // In yard
-        if (color === 'red') return redHomeSpots[tokenIndex];
-        if (color === 'blue') return blueHomeSpots[tokenIndex]; // CHANGED
-      }
-      if (tokenPos >= 53 && tokenPos <= 58) { // On home path
-        if (color === 'red') return redHomePathMap[tokenPos];
-        if (color === 'blue') return blueHomePathMap[tokenPos]; // CHANGED
-      }
-      if (tokenPos >= 1 && tokenPos <= 52) { // On main path
-        const absPos = getAbsolutePosition(color, tokenPos);
-        return pathMap[absPos];
-      }
-      return null; // Token is finished
-    }
-
-    // Helper to find all valid moves for a player
-    function getValidMoves(color, diceValue, tokens) {
-      const validMoves = [];
-      for (let i = 0; i < 4; i++) {
-        const pos = tokens[i];
-        if (pos === 59) continue; // Finished
-
-        if (pos === 0 && diceValue === 6) {
-          validMoves.push(i);
-        } else if (pos > 0) {
-          const newPos = pos + diceValue;
-          if (pos >= 53 && pos <= 57) { // On home path
-            if (newPos <= 58) validMoves.push(i); // Can move
-          } else if (pos >= 1 && pos <= 52) { // On main path
-            if (newPos <= 58) validMoves.push(i); // Covers main path -> main path AND main path -> home path
-          }
-        }
-      }
-      return validMoves;
-    }
-
-    // --- END OF NEW LUDO LOGIC ---
+    // --- GAME FUNCTIONS ---
     
     // Create new game
     function createGame() {
@@ -570,9 +472,8 @@
       
       const gameData = {
         players: {
-          // 0 = yard, 1-52 = main path, 53-58 = home path, 59 = finished
           red: { tokens: [0, 0, 0, 0], finished: 0 },
-          blue: { tokens: [0, 0, 0, 0], finished: 0 } // CHANGED from green
+          blue: { tokens: [0, 0, 0, 0], finished: 0 }
         },
         currentTurn: 'red',
         diceValue: 0,
@@ -600,7 +501,7 @@
       
       currentRoomCode = code;
       playerNumber = 2;
-      myColor = 'blue'; // CHANGED from green
+      myColor = 'blue';
       
       database.ref('ludo/' + currentRoomCode).once('value').then(snapshot => {
         if (!snapshot.exists()) {
@@ -614,7 +515,7 @@
           return;
         }
         
-        database.ref('ludo/' + currentRoomCode + '/player2').set('blue'); // CHANGED
+        database.ref('ludo/' + currentRoomCode + '/player2').set('blue');
         database.ref('ludo/' + currentRoomCode + '/status').set('playing');
         
         startGame();
@@ -635,19 +536,16 @@
     // Start the game
     function startGame() {
       showScreen('game-screen');
-      initBoard(); // Initialize the NEW board
+      initBoard(); 
       
-      if (gameRef) gameRef.off(); // Turn off previous listener if any
+      if (gameRef) gameRef.off(); 
 
       gameRef = database.ref('ludo/' + currentRoomCode);
       gameRef.on('value', snapshot => {
         const game = snapshot.val();
         if (game) {
-          if (!isAnimating) { // Only update display if not animating
-            renderAllTokens(game);
-          }
           localGameCache = game; // Cache the state
-          updateGameDisplay(game);
+          updateGameDisplay(game); // This now handles token rendering
           
           if (game.winner && game.status === 'finished') {
             setTimeout(() => {
@@ -656,7 +554,6 @@
             }, 1000);
           }
         } else {
-          // Game data is null, probably left
           alert("The game has ended or the opponent left.");
           location.reload();
         }
@@ -666,11 +563,13 @@
           location.reload();
       });
     }
+
+    // --- UI & RENDER FUNCTIONS ---
     
     // Initialize the Ludo board UI
     function initBoard() {
       const board = document.getElementById('board');
-      board.innerHTML = ''; // Clear old placeholder
+      board.innerHTML = '';
       
       for (let r = 1; r <= 15; r++) {
         for (let c = 1; c <= 15; c++) {
@@ -709,26 +608,47 @@
         </div>
       `;
       
-      // Update dice
-      diceEl.textContent = game.diceValue > 0 ? game.diceValue : '🎲';
-      if (isMyTurn && !game.canMove && !isAnimating) {
-        diceEl.classList.remove('disabled');
-        diceResultEl.textContent = "Roll the dice!";
-      } else {
-        diceEl.classList.add('disabled');
-        if (isMyTurn && game.canMove) {
+      // **NEW, DEBUGGED DICE UI LOGIC**
+      if (isMyTurn) {
+        if (game.canMove) {
+          // My turn, I've rolled, I need to move
+          diceEl.textContent = game.diceValue;
+          diceEl.classList.add('disabled');
           diceResultEl.textContent = `You rolled: ${game.diceValue}. Move a token!`;
-        } else if (!isMyTurn && game.canMove) {
+        } else {
+          // My turn, I need to roll (or am re-rolling)
+          diceEl.classList.remove('disabled');
+          diceResultEl.textContent = "Roll the dice!";
+          // Clear the dice face if it's showing an old roll
+          diceEl.textContent = '🎲';
+        }
+      } else {
+        // Not my turn
+        diceEl.classList.add('disabled');
+        if (game.diceValue > 0) {
+          // Opponent has rolled or just finished their turn
+          diceEl.textContent = game.diceValue;
           diceResultEl.textContent = `Opponent rolled: ${game.diceValue}. Waiting...`;
-        } else if (!isMyTurn && !game.canMove) {
+        } else {
+          // Opponent is about to roll
+          diceEl.textContent = '🎲';
           diceResultEl.textContent = "Waiting for opponent...";
         }
+      }
+
+      // Handle animation lock
+      if (isAnimating) {
+        diceEl.classList.add('disabled');
+      }
+
+      // Render tokens ONLY if not animating
+      if (!isAnimating) {
+        renderAllTokens(game);
       }
     }
 
     // Renders tokens based on game state
     function renderAllTokens(game) {
-      // Clear all existing tokens from board
       document.querySelectorAll('.token-container').forEach(c => c.innerHTML = '');
 
       const isMyTurn = game.currentTurn === myColor;
@@ -737,7 +657,7 @@
         : [];
       
       renderPlayerTokens('red', game.players.red, validMoves);
-      renderPlayerTokens('blue', game.players.blue, validMoves); // CHANGED
+      renderPlayerTokens('blue', game.players.blue, validMoves);
     }
 
     function renderPlayerTokens(color, playerState, validMoves) {
@@ -767,23 +687,24 @@
         tokenContainer.appendChild(tokenEl);
       });
     }
+
+    // --- GAME ACTIONS ---
     
- // Roll dice
+    // Roll dice
     function rollDice() {
-      // Use the cached state to prevent rapid clicks & rolling during animation
       if (!localGameCache || localGameCache.currentTurn !== myColor || localGameCache.canMove || isAnimating) {
         return;
       }
-      // Disable dice locally to prevent re-roll
       document.getElementById('dice').classList.add('disabled');
       
-      // DO NOT RESET DICE VALUE HERE. This was the bug.
+      // We don't reset diceValue here. The UI logic in updateGameDisplay
+      // now handles hiding the old value.
 
       gameRef.once('value').then(snapshot => {
         const game = snapshot.val();
         
         if (game.currentTurn !== myColor || game.canMove) {
-          return; // Abort if state is not right
+          return; 
         }
         
         const dice = document.getElementById('dice');
@@ -803,18 +724,15 @@
           };
 
           if (validMoves.length === 0) {
-            // No valid moves, pass the turn automatically
             diceResultEl.textContent = `You rolled: ${roll}. No moves!`;
             updates.canMove = false;
             updates.currentTurn = (myColor === 'red' ? 'blue' : 'red');
             
-            // Give user time to see the roll, then pass turn
             setTimeout(() => {
               gameRef.update(updates);
             }, 1500); 
 
           } else {
-            // Valid moves available
             diceResultEl.textContent = `You rolled: ${roll}. Move a token!`;
             updates.canMove = true;
             gameRef.update(updates);
@@ -824,7 +742,7 @@
       });
     }
     
-    // NEW: Animation controller for clicking a token
+    // Animation controller for clicking a token
     function onTokenClick(color, tokenIndex) {
       if (isAnimating || color !== myColor) return;
 
@@ -835,13 +753,12 @@
         return;
       }
 
-      // Disable dice and other movable tokens
       document.getElementById('dice').classList.add('disabled');
       document.querySelectorAll('.token.movable').forEach(t => {
         t.classList.remove('movable');
-        t.onclick = null; // Remove click listener
+        t.onclick = null;
       });
-      tokenEl.classList.add('animating'); // Highlight the moving token
+      tokenEl.classList.add('animating');
 
       const game = localGameCache;
       const diceValue = game.diceValue;
@@ -850,7 +767,6 @@
 
       function hop() {
         if (step > diceValue) {
-          // Animation finished, now run transaction
           tokenEl.classList.remove('animating');
           runMoveTransaction(color, tokenIndex); // This will set isAnimating = false
           return;
@@ -859,7 +775,7 @@
         let nextPos;
         if (currentPos === 0) { // Moving from yard
           nextPos = 1;
-          step = diceValue + 1; // Set step to end loop, it's one move
+          step = diceValue + 1; // End loop, it's one move
         } else {
           nextPos = currentPos + step;
           if (currentPos > 0 && currentPos <= 52 && nextPos > 52) { // Entering home path
@@ -875,43 +791,38 @@
           }
         }
         
-        if (currentPos !== 0) { // Don't increment step if it was a yard move
+        if (currentPos !== 0) {
           step++;
         }
         
         setTimeout(hop, HOP_SPEED_MS);
       }
-
-      hop(); // Start the animation
+      hop();
     }
 
-// NEW: This function contains the original transaction logic
+    // Runs the database update *after* animation
     function runMoveTransaction(color, tokenIndex) {
       gameRef.transaction(game => {
-        if (!game) return; // Game doesn't exist
-        
-        // Validate state
+        if (!game) return;
         if (game.currentTurn !== myColor || !game.canMove) return;
 
         const diceValue = game.diceValue;
         const myTokens = game.players[myColor].tokens;
         const currentPos = myTokens[tokenIndex];
 
-        // Check if this is a valid move
         const validMoves = getValidMoves(myColor, diceValue, myTokens);
-        if (!validMoves.includes(tokenIndex)) return; // Not a valid move
+        if (!validMoves.includes(tokenIndex)) return;
 
         let newPos = currentPos + diceValue;
         let getsExtraTurn = false;
 
-        if (currentPos === 0) { // Moving from yard
-          newPos = 1; // Move to start position
-        } else if (currentPos >= 1 && currentPos <= 52 && newPos > 52) { // Entering home path
-          newPos = 52 + (newPos - 52); // e.g., 51 + 3 -> 54
+        if (currentPos === 0) {
+          newPos = 1; 
+        } else if (currentPos >= 1 && currentPos <= 52 && newPos > 52) {
+          newPos = 52 + (newPos - 52);
         }
         
-        // Update token position
-        if (newPos === 58) { // Token finished!
+        if (newPos === 58) {
           game.players[myColor].tokens[tokenIndex] = 59;
           game.players[myColor].finished++;
           getsExtraTurn = true;
@@ -919,7 +830,6 @@
           game.players[myColor].tokens[tokenIndex] = newPos;
         }
 
-        // Check for winner
         if (game.players[myColor].finished === 4) {
           game.winner = myColor;
           game.status = 'finished';
@@ -928,47 +838,114 @@
           if (newPos >= 1 && newPos <= 52) {
             const absPos = getAbsolutePosition(myColor, newPos);
             if (!safeCells.includes(absPos)) {
-              const opponentColor = (myColor === 'red' ? 'blue' : 'red'); // CHANGED
+              const opponentColor = (myColor === 'red' ? 'blue' : 'red');
               const opponentTokens = game.players[opponentColor].tokens;
               
               for (let i = 0; i < 4; i++) {
                 if (opponentTokens[i] > 0 && opponentTokens[i] <= 52) {
                   const oppAbsPos = getAbsolutePosition(opponentColor, opponentTokens[i]);
                   if (oppAbsPos === absPos) {
-                    game.players[opponentColor].tokens[i] = 0; // Send back to yard
-                    getsExtraTurn = true; // Extra turn for a kill
+                    game.players[opponentColor].tokens[i] = 0;
+                    getsExtraTurn = true;
                   }
                 }
               }
             }
           }
 
-          // Determine next turn
           if (diceValue === 6) {
             getsExtraTurn = true;
           }
 
-          // ** THIS IS THE KEY LOGIC FIX **
           if (getsExtraTurn) {
-            // It's my turn again, I need to roll
-            game.currentTurn = myColor; // Stays the same
+            game.currentTurn = myColor;
             game.canMove = false;
           } else {
-            // It's the opponent's turn
             game.currentTurn = (myColor === 'red' ? 'blue' : 'red');
             game.canMove = false;
           }
         }
         
-        // We no longer reset diceValue, it's overwritten by the next roll
+        // We *keep* the diceValue so the opponent can see it.
+        // The UI logic in updateGameDisplay now handles
+        // hiding it when it's the next player's turn to roll.
         
-        return game; // Commit transaction
+        return game;
       }).then(() => {
         isAnimating = false; // Animation and transaction are complete
       });
     }
+
+    // --- BOARD & UTILITY FUNCTIONS ---
+
+    function getCellType(r, c) {
+      if (r >= 1 && r <= 6 && c >= 1 && c <= 6) return 'home-area home-area-red';
+      if (r >= 1 && r <= 6 && c >= 10 && c <= 15) return 'home-area home-area-green';
+      if (r >= 10 && r <= 15 && c >= 1 && c <= 6) return 'home-area home-area-yellow';
+      if (r >= 10 && r <= 15 && c >= 10 && c <= 15) return 'home-area home-area-blue';
+      if (r >= 7 && r <= 9 && c >= 7 && c <= 9) return 'center-cell';
+      if (c == 8 && r >= 2 && r <= 7) return 'path-cell home-path-green';
+      if (c == 8 && r >= 9 && r <= 14) return 'path-cell home-path-yellow';
+      if (r == 8 && c >= 2 && c <= 7) return 'path-cell home-path-red';
+      if (r == 8 && c >= 9 && c <= 14) return 'path-cell home-path-blue';
+      for (let i = 1; i <= 52; i++) {
+        if (pathMap[i].r === r && pathMap[i].c === c) {
+          let classes = 'path-cell';
+          if (i === redStart) classes += ' start-cell-red';
+          if (i === greenStart) classes += ' start-cell-green';
+          if (i === blueStart) classes += ' start-cell-blue';
+          if (i === yellowStart) classes += ' start-cell-yellow';
+          if (safeCells.includes(i)) classes += ' star-cell';
+          return classes;
+        }
+      }
+      return 'empty-cell';
+    }
+
+    function getAbsolutePosition(color, relativePos) {
+      if (relativePos === 0 || relativePos > 52) return -1;
+      if (color === 'red') return relativePos;
+      if (color === 'blue') return ((relativePos - 1 + (blueStart - 1)) % 52) + 1;
+      return -1;
+    }
+
+    function getCoords(color, tokenIndex, tokenPos) {
+      if (tokenPos === 0) {
+        if (color === 'red') return redHomeSpots[tokenIndex];
+        if (color === 'blue') return blueHomeSpots[tokenIndex];
+      }
+      if (tokenPos >= 53 && tokenPos <= 58) {
+        if (color === 'red') return redHomePathMap[tokenPos];
+        if (color === 'blue') return blueHomePathMap[tokenPos];
+      }
+      if (tokenPos >= 1 && tokenPos <= 52) {
+        const absPos = getAbsolutePosition(color, tokenPos);
+        return pathMap[absPos];
+      }
+      return null; // Finished
+    }
+
+    function getValidMoves(color, diceValue, tokens) {
+      const validMoves = [];
+      for (let i = 0; i < 4; i++) {
+        const pos = tokens[i];
+        if (pos === 59) continue; 
+        if (pos === 0 && diceValue === 6) {
+          validMoves.push(i);
+        } else if (pos > 0) {
+          const newPos = pos + diceValue;
+          if (pos >= 53 && pos <= 57) {
+            if (newPos <= 58) validMoves.push(i);
+          } else if (pos >= 1 && pos <= 52) {
+            if (newPos <= 58) validMoves.push(i);
+          }
+        }
+      }
+      return validMoves;
+    }
     
-    // UI Functions
+    // --- BASIC UI FUNCTIONS ---
+
     function showScreen(screenId) {
       document.querySelectorAll('.setup-screen, .game-screen').forEach(screen => {
         screen.classList.remove('active');
@@ -982,8 +959,7 @@
     
     function cancelGame() {
       if (currentRoomCode) {
-        // The typo was here: 'ludo/'C' + ...'
-        // It's now corrected to: 'ludo/' + ...
+        // This is the corrected line that had a typo
         database.ref('ludo/' + currentRoomCode).remove();
       }
       location.reload();
@@ -993,12 +969,8 @@
       if (gameRef) {
         gameRef.off();
       }
-      // As player 1, remove the game. As player 2, just leave
-      if (currentRoomCode && playerNumber === 1) {
+      if (currentRoomCode) {
         database.ref('ludo/' + currentRoomCode).remove();
-      } else if (currentRoomCode && playerNumber === 2) {
-        // More gracefully, set player2 to null, but removing is fine for this app
-        database.ref('ludo/' + currentRoomCode).remove(); // Simple cleanup
       }
       location.reload();
     }
