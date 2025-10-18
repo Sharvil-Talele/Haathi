@@ -742,7 +742,7 @@
       });
     }
     
-    // Animation controller for clicking a token
+// Animation controller for clicking a token
     function onTokenClick(color, tokenIndex) {
       if (isAnimating || color !== myColor) return;
 
@@ -779,7 +779,13 @@
         } else {
           nextPos = currentPos + step;
           if (currentPos > 0 && currentPos <= 52 && nextPos > 52) { // Entering home path
-            nextPos = 52 + (nextPos - currentPos);
+            
+            // ** THIS IS THE FIX **
+            // The old logic was: nextPos = 52 + (nextPos - currentPos);
+            // This was incorrect and out of sync with the transaction logic.
+            // The new logic matches the transaction logic.
+            nextPos = 52 + (nextPos - 52); 
+            
           }
         }
         
@@ -799,7 +805,6 @@
       }
       hop();
     }
-
    // Runs the database update *after* animation
     function runMoveTransaction(color, tokenIndex) {
       gameRef.transaction(game => {
